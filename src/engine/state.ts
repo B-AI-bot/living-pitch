@@ -52,12 +52,48 @@ function initialState(): PitchState {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function storedBookingPrefill(value: unknown): BookingPrefill | null {
+  if (!isRecord(value)) return null
+  if (typeof value.start !== 'string' || typeof value.name !== 'string' || typeof value.email !== 'string' || typeof value.notes !== 'string') return null
+  const start = new Date(value.start)
+  if (Number.isNaN(start.getTime()) || start.toISOString() !== value.start) return null
+  return { start: value.start, name: value.name, email: value.email, notes: value.notes }
+}
+
+function storedBooking(value: unknown): BookingStatus {
+  if (!isRecord(value) || typeof value.status !== 'string') return { status: 'idle' }
+  if (value.status === 'idle') return { status: 'idle' }
+  if (value.status === 'booked') {
+    if (typeof value.start !== 'string') return { status: 'idle' }
+    const start = new Date(value.start)
+    return Number.isNaN(start.getTime()) || start.toISOString() !== value.start
+      ? { status: 'idle' }
+      : { status: 'booked', start: value.start }
+  }
+  const prefill = storedBookingPrefill(value.prefill)
+  if (!prefill) return { status: 'idle' }
+  if (value.status === 'booking_error' && typeof value.message === 'string') {
+    return { status: 'booking_error', prefill, message: value.message }
+  }
+  if (value.status === 'booking' || value.status === 'awaiting_human_confirmation') {
+    return { status: 'awaiting_human_confirmation', prefill }
+  }
+  return { status: 'idle' }
+}
+
 let state = loadState()
 
 function loadState(): PitchState {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (raw) return { ...initialState(), ...JSON.parse(raw) } as PitchState
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw)
+      if (isRecord(parsed)) return { ...initialState(), ...parsed, booking: storedBooking(parsed.booking) }
+    }
   } catch {
     // Embedded browsers and private windows can reject session storage.
   }
@@ -244,6 +280,7 @@ export function updateBookingPrefill(prefill: BookingPrefill): PitchState {
 
 export function markBookingSubmitting(): PitchState {
   if (state.booking.status !== 'awaiting_human_confirmation' && state.booking.status !== 'booking_error') return getPitchState()
+  capture('booking_confirmation_yes_click', { channel: 'human', start: state.booking.prefill.start })
   state.booking = { status: 'booking', prefill: { ...state.booking.prefill } }
   emit()
   return getPitchState()
@@ -266,6 +303,9 @@ export function markBookingError(message: string): PitchState {
 
 export function dismissBooking(): PitchState {
   if (state.booking.status === 'booked') return getPitchState()
+  if (state.booking.status === 'awaiting_human_confirmation' || state.booking.status === 'booking_error') {
+    capture('booking_confirmation_no_click', { channel: 'human', start: state.booking.prefill.start })
+  }
   state.booking = { status: 'idle' }
   emit()
   return getPitchState()

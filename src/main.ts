@@ -20,4 +20,4 @@ if (path === '/evolution') {
 } else {
   renderNotFound(root)
 }
-void installWebMcpTools()
+void installWebMcpTools(path)

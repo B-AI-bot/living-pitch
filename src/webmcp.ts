@@ -193,7 +193,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     name: 'book_assessment_call',
-    description: 'Sensitive confirmation-gated action. Prefill the visible booking modal for the human. This tool never books. Only the human confirmation button can POST the booking. Call this tool again after the human decides to observe a booked result for the same start.',
+    description: 'Sensitive confirmation-gated action available only on the Living Pitch route. Prefill the visible booking modal for the human. This tool never books. Only the human confirmation button can POST the booking. Call this tool again after the human decides to observe a booked result for the same start.',
     inputSchema: {
       type: 'object', additionalProperties: false, required: ['start', 'name', 'email'],
       properties: { start: { type: 'string' }, name: { type: 'string' }, email: { type: 'string' } },
@@ -217,12 +217,15 @@ export const tools: ToolDefinition[] = [
   },
 ]
 
-export async function installWebMcpTools(): Promise<boolean> {
+export async function installWebMcpTools(pathname = '/'): Promise<boolean> {
   const modelContext = navigator.modelContext
   if (!modelContext) return false
   const register = modelContext.registerTool ?? modelContext.register
   if (!register) return false
-  for (const tool of tools) await register.call(modelContext, tool)
+  const availableTools = pathname === '/'
+    ? tools
+    : tools.filter((tool) => tool.name !== 'book_assessment_call')
+  for (const tool of availableTools) await register.call(modelContext, tool)
   return true
 }
 

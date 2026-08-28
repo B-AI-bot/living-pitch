@@ -93,3 +93,43 @@ The first `npm run summit:smoke` run failed with `ERR_MODULE_NOT_FOUND` for `src
 - No real booking was made. The tests verify the request contract and confirmation gate without calling the booking endpoint, as required.
 - The UI compiles and its state and network contracts have smoke coverage. This task does not add an automated browser interaction test.
 - The pre-existing untracked `RETURN-W1.md` was not modified or staged.
+
+## Fix round 1
+
+### Review findings addressed
+
+- Scoped `book_assessment_call` registration to the `/` pitch route, where `renderPitch` owns the confirmation modal. Business pages keep the other WebMCP tools but do not expose a booking tool without a human confirmation path.
+- Added `booking_confirmation_yes_click` at the accepted human submit transition. The event fires before the async booking request, so failed and interrupted attempts retain the human decision.
+- Added `booking_confirmation_no_click` when the human dismisses an awaiting or failed confirmation.
+- Added booking-state parsing at the session-storage boundary. A persisted `booking` variant reloads as `awaiting_human_confirmation` with the same validated prefill. Invalid persisted booking data reloads as `idle`.
+
+### Focused regression coverage
+
+The updated `scripts/task-3-smoke.mjs` exercises the real registration and state boundaries:
+
+- `installWebMcpTools('/book')` omits `book_assessment_call`.
+- `installWebMcpTools('/')` includes `book_assessment_call`.
+- A failed yes attempt records `booking_confirmation_yes_click` before `booking_error`.
+- Dismissing that failed attempt records `booking_confirmation_no_click`.
+- Importing state with a persisted `booking` variant returns `awaiting_human_confirmation`.
+
+The three red runs failed on the reviewed behavior before implementation:
+
+- Business-page registration returned `true` for `book_assessment_call` when the test expected `false`.
+- The event after `markBookingSubmitting()` remained `webmcp_tool_call` when the test expected `booking_confirmation_yes_click`.
+- Reload returned `status: 'booking'` when the test expected `status: 'awaiting_human_confirmation'`.
+
+### Commands and outputs
+
+- `node scripts/task-3-smoke.mjs` exited 0 with `Task 3 worker and WebMCP smoke ok`.
+- `npm run summit:smoke` exited 0 with `summit smoke ok` and `Task 3 worker and WebMCP smoke ok`.
+- `npm run build` exited 0. TypeScript passed, and Vite built 16 modules.
+- `bash ops/smoke.sh` exited 0 with `scan smoke ok`, `webmcp cold-start smoke ok`, and `smoke ok`.
+- `git diff --check` exited 0 with no output.
+- The em dash check printed `em dash check ok`.
+- The anti-leak check printed `anti-leak check ok`.
+
+### Fix-round concerns
+
+- Business pages intentionally do not register `book_assessment_call`. The pitch route remains the only route with the booking tool and its human modal.
+- No real booking was made. The focused test drives registration, decision events, failure, dismissal, and reload state without calling `/api/cal/book`.

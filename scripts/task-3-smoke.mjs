@@ -1,7 +1,23 @@
 import assert from 'node:assert/strict'
 
+const posthogEvents = []
+const interruptedPrefill = {
+  start: '2026-09-01T17:00:00.000Z',
+  name: 'Ada Lovelace',
+  email: 'ada@example.com',
+  notes: 'Bring last week\'s calendar.',
+}
 globalThis.window = {
   location: { pathname: '/' },
+  posthog: {
+    capture: (event, properties) => posthogEvents.push({ event, properties }),
+  },
+}
+globalThis.sessionStorage = {
+  getItem: (key) => key === 'living-pitch-state-v1'
+    ? JSON.stringify({ booking: { status: 'booking', prefill: interruptedPrefill } })
+    : null,
+  setItem: () => undefined,
 }
 
 const leakyAnswers = {
@@ -102,13 +118,32 @@ assert.deepEqual(worker.buildBookingPayload({
   },
 })
 
-const { tools } = await import('../src/webmcp.ts')
+const { installWebMcpTools, tools } = await import('../src/webmcp.ts')
 const state = await import('../src/engine/state.ts')
+assert.deepEqual(state.getPitchState().booking, {
+  status: 'awaiting_human_confirmation',
+  prefill: interruptedPrefill,
+})
 state.resetPitch()
 const names = tools.map((tool) => tool.name)
 for (const name of ['generate_preliminary_map', 'run_leverage_score', 'book_assessment_call', 'get_pitch_summary']) {
   assert.ok(names.includes(name), `${name} must be registered`)
 }
+
+const businessPageTools = []
+globalThis.navigator.modelContext = {
+  registerTool: (tool) => businessPageTools.push(tool.name),
+}
+assert.equal(await installWebMcpTools('/book'), true)
+assert.equal(businessPageTools.includes('book_assessment_call'), false)
+
+const pitchPageTools = []
+globalThis.navigator.modelContext = {
+  registerTool: (tool) => pitchPageTools.push(tool.name),
+}
+assert.equal(await installWebMcpTools('/'), true)
+assert.equal(pitchPageTools.includes('book_assessment_call'), true)
+globalThis.navigator.modelContext = undefined
 
 const runScore = tools.find((tool) => tool.name === 'run_leverage_score')
 assert.ok(runScore)
@@ -129,6 +164,18 @@ const start = '2026-09-01T17:00:00.000Z'
 const awaiting = await book.execute({ start, name: 'Ada Lovelace', email: 'ada@example.com' })
 assert.deepEqual(awaiting, { ok: true, result: { status: 'awaiting_human_confirmation' } })
 assert.equal(state.getPitchState().booking.status, 'awaiting_human_confirmation')
+state.markBookingSubmitting()
+assert.deepEqual(posthogEvents.at(-1), {
+  event: 'booking_confirmation_yes_click',
+  properties: { channel: 'human', start, pathname: '/' },
+})
+state.markBookingError('Interrupted after the human click.')
+state.dismissBooking()
+assert.deepEqual(posthogEvents.at(-1), {
+  event: 'booking_confirmation_no_click',
+  properties: { channel: 'human', start, pathname: '/' },
+})
+await book.execute({ start, name: 'Ada Lovelace', email: 'ada@example.com' })
 state.markBookingBooked(start)
 const repeated = await book.execute({ start, name: 'Ada Lovelace', email: 'ada@example.com' })
 assert.deepEqual(repeated, { ok: true, result: { status: 'booked', start } })
