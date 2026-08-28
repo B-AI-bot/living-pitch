@@ -1,9 +1,11 @@
 import { capture } from './analytics.ts'
 import { wireMutationAffordance } from './colony.ts'
+import { isResidentEnabled, requestResident, residentSessionState } from './resident.ts'
 import { getQuestion, QUESTIONS } from './scan/index.ts'
-import { objections, getIndustryLabel, getSceneCopy, sceneQuestions, stageRender } from './engine/scenes.ts'
+import { findObjection, objections, getIndustryLabel, getSceneCopy, sceneQuestions, stageRender } from './engine/scenes.ts'
 import {
   advanceScene,
+  applyResidentAction,
   answerScanQuestion,
   choosePath,
   dismissBooking,
@@ -12,6 +14,7 @@ import {
   markBookingError,
   markBookingSubmitting,
   prefillHumanBooking,
+  recordResidentExchange,
   raiseObjection,
   replayAsSomeoneElse,
   setBookingSlots,
@@ -23,7 +26,7 @@ import {
   updateBookingPrefill,
 } from './engine/state.ts'
 import { generatePreliminaryMap, scoreSummit } from './engine/summit.ts'
-import type { BookingPrefill, PitchState, SceneId } from './engine/types.ts'
+import type { BookingPrefill, PitchState, ResidentExchange, SceneId } from './engine/types.ts'
 
 const contextChoices = {
   industry: [
@@ -194,6 +197,7 @@ export function renderSummit(state: PitchState): string {
     </section>
     <button class="button button-quiet replay-button" data-action="replay">Replay and compare the film</button>
     <a class="button button-quiet" href="/roast">Roast my site</a>
+    ${objectionsPanel('summit', state)}
   </div>`
 }
 
@@ -236,7 +240,42 @@ function scanQuestion(questionId: string, state: PitchState): string {
 function objectionsPanel(scene: SceneId, state: PitchState): string {
   const sceneObjections = objections.filter((objection) => objection.scenes.includes(scene)).slice(0, 3)
   const latest = state.objectionsRaised[state.objectionsRaised.length - 1]
-  return `<section class="objection-panel"><div><p class="eyebrow">Ask the presenter</p><h2>Put it on stage.</h2><p class="muted">Humans can tap a concern. Agents can call <code>raise_objection</code>. Either way, the answer is recorded.</p></div><div class="chips">${sceneObjections.map((objection) => `<button class="chip" data-objection="${objection.id}">${escapeHtml(objection.label)}</button>`).join('')}</div>${latest ? `<div class="stage-answer"><p class="stage-question">${escapeHtml(stageRender(latest))}</p><p>${escapeHtml(latest.answer)}</p></div>` : ''}</section>`
+  const resident = state.residentExchange
+  const action = resident?.action ? `<p class="resident-action">Next control: ${escapeHtml(resident.action.kind)} · ${escapeHtml(resident.action.target)}</p>` : ''
+  const answer = resident
+    ? `<div class="stage-answer resident-answer"><p class="stage-question">${escapeHtml(resident.stage_render)}</p><p>${escapeHtml(resident.answer_for_agent)}</p>${action}</div>`
+    : latest ? `<div class="stage-answer"><p class="stage-question">${escapeHtml(stageRender(latest))}</p><p>${escapeHtml(latest.answer)}</p></div>` : ''
+  return `<section class="objection-panel"><div><p class="eyebrow">Ask the presenter</p><h2>Put it on stage.</h2><p class="muted">Ask Baibot anything. Canned answers land instantly. A live Resident answer stays grounded in this pitch and the session state.</p><form class="resident-form" data-resident-form><label for="resident-message">Ask the presenter anything</label><div class="resident-form-row"><input id="resident-message" name="message" type="text" maxlength="4000" placeholder="Who operates this after launch?" required><button class="button button-primary" type="submit">Ask Baibot</button></div></form></div><div class="chips">${sceneObjections.map((objection) => `<button class="chip" data-objection="${objection.id}">${escapeHtml(objection.label)}</button>`).join('')}</div>${answer}</section>`
+}
+
+function residentExchange(message: string, response: { answer_for_agent: string; stage_render: string; action: ResidentExchange['action'] }, channel: ResidentExchange['channel']): void {
+  if (response.action) applyResidentAction(response.action)
+  recordResidentExchange({ channel, message, answer_for_agent: response.answer_for_agent, stage_render: response.stage_render, action: response.action })
+}
+
+async function askResident(root: HTMLElement, message: string, channel: ResidentExchange['channel']): Promise<void> {
+  const state = getPitchState()
+  const canned = findObjection(message)
+  if (canned) {
+    raiseObjection(canned.id, message, channel)
+    capture('resident_exchange', { channel, mode: 'canned' })
+    return
+  }
+  if (!isResidentEnabled()) {
+    residentExchange(message, { answer_for_agent: 'The resident is warming up. Here is what I can answer today.', stage_render: `${channel === 'agent' ? 'Your agent asks' : 'You ask'}: ${message}`, action: null }, channel)
+    return
+  }
+  try {
+    const response = await requestResident({ message, state: residentSessionState(state), channel })
+    if (!('answer_for_agent' in response)) {
+      residentExchange(message, { answer_for_agent: 'The resident is warming up. Here is what I can answer today.', stage_render: `${channel === 'agent' ? 'Your agent asks' : 'You ask'}: ${message}`, action: null }, channel)
+      return
+    }
+    residentExchange(message, response, channel)
+  } catch (error) {
+    residentExchange(message, { answer_for_agent: error instanceof Error ? error.message : 'The Resident could not answer. Choose a visible objection chip while it warms back up.', stage_render: `${channel === 'agent' ? 'Your agent asks' : 'You ask'}: ${message}`, action: null }, channel)
+  }
+  root.querySelector<HTMLInputElement>('#resident-message')?.focus()
 }
 
 function sceneText(copy: ReturnType<typeof getSceneCopy>, tone: PitchState['skin']['tone']): string {
@@ -322,6 +361,14 @@ function render(root: HTMLElement, state: PitchState, roastDomain: string): void
   root.querySelectorAll<HTMLButtonElement>('[data-path]').forEach((button) => button.addEventListener('click', () => choosePath(button.dataset.path ?? '')))
   root.querySelectorAll<HTMLButtonElement>('[data-answer-question]').forEach((button) => button.addEventListener('click', () => answerScanQuestion(button.dataset.answerQuestion ?? '', button.dataset.answerValue ?? '')))
   root.querySelectorAll<HTMLButtonElement>('[data-objection]').forEach((button) => button.addEventListener('click', () => raiseObjection(button.dataset.objection ?? '')))
+  root.querySelector<HTMLFormElement>('[data-resident-form]')?.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    if (!(form instanceof HTMLFormElement)) return
+    const message = new FormData(form).get('message')
+    if (typeof message !== 'string' || !message.trim()) return
+    void askResident(root, message.trim(), 'human')
+  })
   root.querySelectorAll<HTMLButtonElement>('[data-queue-item]').forEach((button) => button.addEventListener('click', () => { button.classList.add('is-cleared'); button.disabled = true; capture('approval_demo_tap', { item: button.dataset.queueItem }) }))
   root.querySelector<HTMLButtonElement>('[data-action="generic"]')?.addEventListener('click', () => setGenericMode(!state.genericMode))
   root.querySelector<HTMLButtonElement>('[data-action="why"]')?.addEventListener('click', () => { const popover = root.querySelector<HTMLElement>('.why-popover'); if (popover) popover.hidden = !popover.hidden })
