@@ -1,0 +1,14 @@
+[Unit]
+Description=The Living Pitch approval ledger
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/living-pitch
+ExecStart=/usr/bin/env python3 %h/projects/living-pitch/ops/ledger_bot.py
+Restart=always
+RestartSec=30
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
