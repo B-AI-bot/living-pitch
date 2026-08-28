@@ -54,9 +54,9 @@ const genericSpeed = getSceneCopy('speed', {
   generic: true,
 })
 assert.match(genericSpeed.proof, /#4 the website that adapts to how you read/)
-assert.match(genericSpeed.narration, /the same discipline runs on the site you are playing right now/)
+assert.match(genericSpeed.narration, /The same discipline runs on the site you are playing right now/)
 
-assert.deepEqual(sceneQuestions['memory-cash'], ['memory_access', 'cash_control'])
+assert.deepEqual(sceneQuestions['memory-cash'], ['memory_access', 'cash_control', 'loaded_rate', 'client_volume'])
 
 const memoryCash = getSceneCopy('memory-cash', {
   tone: 'evidence-first',
@@ -69,5 +69,5 @@ assert.match(memoryCash.narration, /Assessment \(credited\)/)
 assert.match(memoryCash.narration, /First Install \$7,500-15,000 fixed/)
 assert.match(memoryCash.narration, /Partnership from \$5,000\/month plus performance share/)
 assert.match(memoryCash.proof, /Three installable opportunities\. Or you pay nothing\./)
-assert.match(memoryCash.proof, /the fee comes off your first install/)
+assert.match(memoryCash.proof, /The fee comes off your first install/)
 console.log('scan smoke ok')

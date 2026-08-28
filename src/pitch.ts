@@ -1,6 +1,6 @@
 import { capture } from './analytics.ts'
 import { getQuestion, QUESTIONS } from './scan/index.ts'
-import { objections, getIndustryLabel, getSceneCopy, sceneQuestions } from './engine/scenes.ts'
+import { objections, getIndustryLabel, getSceneCopy, sceneQuestions, stageRender } from './engine/scenes.ts'
 import {
   advanceScene,
   answerScanQuestion,
@@ -45,6 +45,19 @@ const contextChoices = {
 } as const
 
 let choices: { industry?: string; size?: string; style?: string } = {}
+let hudCollapsed = false
+let narrationTimer: number | undefined
+let narrationScene: SceneId | null = null
+let bookingAbortController: AbortController | null = null
+
+try {
+  const storedHudChoice = sessionStorage.getItem('living-pitch-hud-collapsed-v1')
+  hudCollapsed = storedHudChoice === null
+    ? typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 759px)').matches
+    : storedHudChoice === 'true'
+} catch {
+  hudCollapsed = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 759px)').matches
+}
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] ?? character)
@@ -71,11 +84,13 @@ function sceneIndex(scene: SceneId): number {
 function hud(state: PitchState): string {
   const contextLabel = state.context ? `${sizeLabel(state.context.size)} ${getIndustryLabel(state.skin.industry)}` : 'your firm'
   const toneLabel = state.skin.tone === 'evidence-first' ? 'evidence-first' : 'story-reassurance'
-  const score = state.score === null ? 'building' : String(Math.round(state.score))
-  const euroLabel = state.eurosRecoverable.high ? `€${formatEuros(state.eurosRecoverable.low)} to €${formatEuros(state.eurosRecoverable.high)}` : 'building'
+  const score = state.score === null
+    ? state.scene === 'summit' ? 'partial' : 'building'
+    : `${Math.round(state.score)}${state.scoreStatus === 'partial' ? ' · partial' : ''}`
+  const euroLabel = state.eurosRecoverable.high ? `€${formatEuros(state.eurosRecoverable.low)} to €${formatEuros(state.eurosRecoverable.high)}` : 'add rate + volume'
   return `
-    <aside class="hud" aria-label="Pitch progress">
-      <div class="hud-top"><span class="hud-brand">THE LIVING PITCH</span><button class="hud-toggle" data-action="hud-toggle" aria-expanded="true">HUD</button></div>
+    <aside class="hud ${hudCollapsed ? 'is-collapsed' : ''}" aria-label="Pitch progress">
+      <div class="hud-top"><span class="hud-brand">THE LIVING PITCH</span><div class="hud-compact"><span>${sceneIndex(state.scene) + 1}/6 territories</span><strong>${score}</strong></div><button class="hud-toggle" data-action="hud-toggle" aria-expanded="${String(!hudCollapsed)}">HUD</button></div>
       <div class="hud-content">
         <div class="territory-map" aria-label="Territories">
           ${['BASECAMP', 'PIPELINE', 'FOLLOW-THROUGH', 'SPEED', 'MEMORY & CASH', 'SUMMIT'].map((label, index) => `<span class="territory ${index <= sceneIndex(state.scene) ? 'is-active' : ''} ${index === sceneIndex(state.scene) ? 'is-current' : ''}"><i>${String(index).padStart(2, '0')}</i>${label}</span>`).join('')}
@@ -116,7 +131,7 @@ function contextPanel(state: PitchState): string {
 export function renderSummit(state: PitchState): string {
   const score = scoreSummit(state.answers)
   const cta = getSceneCopy('summit', state.skin).cta
-  const resultSections = score.complete
+  const resultSections = score.complete && score.economicInputsComplete && state.context
     ? (() => {
         const map = generatePreliminaryMap({ context: state.context, answers: state.answers })
         const dimensions = Object.entries(score.dimensions)
@@ -135,7 +150,8 @@ export function renderSummit(state: PitchState): string {
           <p class="eyebrow">YOUR LEVERAGE SCORE</p>
           <div class="score-number"><strong>${Math.round(score.score)}</strong><span>/100</span></div>
           <p>Top leak: <strong>${escapeHtml(score.topLeak ?? 'none')}</strong></p>
-          <p class="estimate">Estimated recoverable value: <strong>€${formatEuros(score.eurosPerWeek.low)} to €${formatEuros(score.eurosPerWeek.high)} per week</strong>. Directional estimate from your answers, not measured savings.</p>
+          <p class="estimate">Estimate, from your answers: <strong>€${formatEuros(score.eurosPerWeek.low)} to €${formatEuros(score.eurosPerWeek.high)} per week</strong>.</p>
+          <details><summary>See the math</summary><p>${escapeHtml(score.estimateFormula ?? '')}. The range uses the low and high ends of your selected rate and client-volume bands. It is directional, not measured savings.</p></details>
           <div class="dimension-grid">${dimensions}</div>
         </section>
         <section class="preliminary-map" id="preliminary-map">
@@ -146,24 +162,24 @@ export function renderSummit(state: PitchState): string {
           <button class="button ${state.skin.tone === 'story-reassurance' ? 'button-primary' : 'button-quiet'}" data-action="download-map">Download / print draft map</button>
         </section>`
       })()
-    : `<section class="score-reveal score-building">
-        <p class="eyebrow">YOUR LEVERAGE SCORE IS BUILDING</p>
-        <h2>Complete the remaining scan questions.</h2>
-        <p>No numeric score or ranked map is shown until every territory question has an answer.</p>
+    : `<section class="score-reveal score-partial">
+        <p class="eyebrow">${score.complete ? 'YOUR LEVERAGE SCORE' : 'YOUR LEVERAGE SCORE · PARTIAL'}</p>
+        <div class="score-number"><strong>${Math.round(score.score)}</strong><span>/100</span></div>
+        <p>${score.complete ? 'Your ordinal score is final. Add the rate and volume answers for an honest euro estimate.' : 'The ordinal score is partial. Complete the remaining scan questions before reading a ranked map.'}</p>
         <div class="summit-missing-questions">${QUESTIONS
-          .filter((question) => question.dimension !== 'context' && question.dimension !== 'style' && !state.answers[question.id])
+          .filter((question) => question.dimension !== 'style' && !state.answers[question.id])
           .map((question) => scanQuestion(question.id, state))
           .join('')}</div>
       </section>`
   const slots = state.bookingSlots.status === 'ready'
-    ? state.bookingSlots.slots.map((start) => `<button class="slot-button" data-booking-slot="${escapeHtml(start)}"><span>${escapeHtml(localSlot(start))}</span><small>shown in your local time</small></button>`).join('')
+    ? state.bookingSlots.slots.map((slot) => `<button class="slot-button" data-booking-slot="${escapeHtml(slot.start)}"><span>${escapeHtml(localSlot(slot.start))}</span><small>shown in your local time</small></button>`).join('')
     : state.bookingSlots.status === 'loading'
       ? '<p class="muted">Loading the next seven days...</p>'
       : state.bookingSlots.status === 'error'
         ? `<p class="booking-error">${escapeHtml(state.bookingSlots.message)}</p><button class="button button-quiet" data-action="retry-slots">Try slots again</button>`
         : ''
   const bookingResult = state.booking.status === 'booked'
-    ? `<div class="booking-success"><strong>Booked.</strong><span>${escapeHtml(localSlot(state.booking.start))}</span><p>The confirmed start is now visible to your agent in pitch state and summary.</p></div>`
+    ? `<div class="booking-success"><strong>Locked. The invite is on its way.</strong><span>${escapeHtml(localSlot(state.booking.start))}</span><p>Before the call, do one thing: pull up last week's calendar and find the moment you thought "a machine should be doing this by now." That moment is where we'll start. Thirty minutes, no slides, and you'll leave with a map of your own week either way.</p></div>`
     : `<div class="slot-grid">${slots}</div>`
 
   return `<div class="summit-card">
@@ -175,7 +191,7 @@ export function renderSummit(state: PitchState): string {
       <p>Pick a time. Your agent can prefill this step, but only your click can book it.</p>
       ${bookingResult}
     </section>
-    <button class="button button-quiet replay-button" data-action="replay">Replay as someone else</button>
+    <button class="button button-quiet replay-button" data-action="replay">Replay and compare the film</button>
   </div>`
 }
 
@@ -186,7 +202,7 @@ function bookingModal(state: PitchState): string {
   const error = state.booking.status === 'booking_error' ? `<p class="booking-error">${escapeHtml(state.booking.message)}</p>` : ''
   return `<div class="modal-backdrop" role="presentation">
     <section class="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title">
-      <button class="modal-close" data-action="close-booking" aria-label="Close booking confirmation" ${busy ? 'disabled' : ''}>×</button>
+      <button class="modal-close" data-action="close-booking" aria-label="Cancel booking confirmation">×</button>
       <p class="eyebrow">HUMAN CONFIRMATION REQUIRED</p>
       <h2 id="booking-title">Nothing ships without your yes. Including this booking.</h2>
       <p class="selected-slot">${escapeHtml(localSlot(prefill.start))}</p>
@@ -202,6 +218,7 @@ function bookingModal(state: PitchState): string {
         <label>Notes<textarea name="notes" maxlength="2000">${escapeHtml(prefill.notes)}</textarea></label>
         ${error}
         <button class="button button-primary" type="submit" ${busy ? 'disabled' : ''}>${busy ? 'Booking...' : 'Yes, book this call'}</button>
+        <button class="button button-quiet" type="button" data-action="close-booking">Cancel</button>
       </form>
     </section>
   </div>`
@@ -217,53 +234,75 @@ function scanQuestion(questionId: string, state: PitchState): string {
 function objectionsPanel(scene: SceneId, state: PitchState): string {
   const sceneObjections = objections.filter((objection) => objection.scenes.includes(scene)).slice(0, 3)
   const latest = state.objectionsRaised[state.objectionsRaised.length - 1]
-  return `<section class="objection-panel"><div><p class="eyebrow">Ask the presenter</p><h2>Put it on stage.</h2><p class="muted">Humans can tap a concern. Agents can call <code>raise_objection</code>. Either way, the answer is recorded.</p></div><div class="chips">${sceneObjections.map((objection) => `<button class="chip" data-objection="${objection.id}">${escapeHtml(objection.label)}</button>`).join('')}</div>${latest ? `<div class="stage-answer"><p class="stage-question">${latest.detail ? 'Your agent asks:' : 'You ask:'} ${escapeHtml(latest.topic)}</p><p>${escapeHtml(latest.answer)}</p></div>` : ''}</section>`
+  return `<section class="objection-panel"><div><p class="eyebrow">Ask the presenter</p><h2>Put it on stage.</h2><p class="muted">Humans can tap a concern. Agents can call <code>raise_objection</code>. Either way, the answer is recorded.</p></div><div class="chips">${sceneObjections.map((objection) => `<button class="chip" data-objection="${objection.id}">${escapeHtml(objection.label)}</button>`).join('')}</div>${latest ? `<div class="stage-answer"><p class="stage-question">${escapeHtml(stageRender(latest))}</p><p>${escapeHtml(latest.answer)}</p></div>` : ''}</section>`
+}
+
+function sceneText(copy: ReturnType<typeof getSceneCopy>, tone: PitchState['skin']['tone']): string {
+  const narration = `<div class="narration" data-narration="${escapeHtml(copy.narration)}"></div>`
+  const proof = `<p class="proof-line">${copy.proof}</p>`
+  return tone === 'evidence-first' ? `${proof}${narration}` : `${narration}${proof}`
+}
+
+function continueLabel(tone: PitchState['skin']['tone'], label: string): string {
+  return tone === 'evidence-first' ? `See the proof → ${label}` : `Follow the thread → ${label}`
 }
 
 function renderScene(state: PitchState): string {
   const copy = getSceneCopy(state.scene, state.skin)
   if (state.scene === 'basecamp') {
-    return `<section class="scene scene-basecamp"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${contextPanel(state)}${objectionsPanel('basecamp', state)}</section>`
+    return `<section class="scene scene-basecamp"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1>${sceneText(copy, state.skin.tone)}${contextPanel(state)}${objectionsPanel('basecamp', state)}</section>`
   }
   const questions = state.scene === 'pipeline' || state.scene === 'follow-through' || state.scene === 'speed' || state.scene === 'memory-cash'
     ? sceneQuestions[state.scene].map((id) => scanQuestion(id, state)).join('')
     : ''
   const controls = state.scene === 'pipeline'
-    ? `<div class="path-choice"><p class="eyebrow">Choose the revenue path</p><div class="path-grid"><button data-path="post"><strong>Post</strong><span>Keep the signal alive.</span></button><button data-path="pitch"><strong>Pitch</strong><span>Open the right conversation.</span></button><button data-path="partner"><strong>Partner</strong><span>Build through the network.</span></button></div></div><button class="button button-primary" data-action="continue">Continue to follow-through</button>`
+    ? `<div class="path-choice"><p class="eyebrow">Choose the revenue path</p><div class="path-grid"><button data-path="post"><strong>Post</strong><span>Keep the signal alive.</span></button><button data-path="pitch"><strong>Pitch</strong><span>Open the right conversation.</span></button><button data-path="partner"><strong>Partner</strong><span>Build through the network.</span></button></div></div><button class="button button-primary" data-action="continue">${continueLabel(state.skin.tone, 'Continue to follow-through')}</button>`
     : state.scene === 'follow-through'
-      ? `<div class="ledger-demo"><p class="eyebrow">THE APPROVAL LEDGER, IN PRACTICE</p><h2>0 messages without approval.</h2><div class="queue" aria-label="Approval queue">${['Message draft', 'Quote draft', 'Post draft'].map((item) => `<button data-queue-item="${item}"><span>${item}</span><b>tap yes</b></button>`).join('')}</div><p class="muted">Every decision is logged, timestamped, and inspectable.</p></div><button class="button button-primary" data-action="continue">Continue to speed</button>`
+      ? `<div class="ledger-demo"><p class="eyebrow">THE APPROVAL LEDGER, IN PRACTICE</p><h2>0 messages without approval.</h2><div class="queue" aria-label="Approval queue">${['Message draft', 'Quote draft', 'Post draft'].map((item) => `<button data-queue-item="${item}"><span>${item}</span><b>tap yes</b></button>`).join('')}</div><p class="muted">Every decision is logged, timestamped, and inspectable.</p></div><button class="button button-primary" data-action="continue">${continueLabel(state.skin.tone, 'Continue to speed')}</button>`
       : state.scene === 'speed'
-        ? `<section class="case-card"><p class="eyebrow">THE CASE CARD</p>${copy.caseCard?.map((line) => `<p>${escapeHtml(line)}</p>`).join('') ?? ''}<blockquote><p>${escapeHtml(copy.quote ?? '')}</p><footer>${escapeHtml(copy.attribution ?? '')}</footer></blockquote></section><button class="button button-primary" data-action="continue">Continue to memory & cash</button>`
+        ? `<section class="case-card"><p class="eyebrow">THE CASE CARD</p>${copy.caseCard?.map((line) => `<p>${escapeHtml(line)}</p>`).join('') ?? ''}<blockquote><p>${escapeHtml(copy.quote ?? '')}</p><footer>${escapeHtml(copy.attribution ?? '')}</footer></blockquote></section><button class="button button-primary" data-action="continue">${continueLabel(state.skin.tone, 'Continue to memory & cash')}</button>`
         : state.scene === 'memory-cash'
-          ? `<section class="offer-card"><p class="eyebrow">THE OFFER</p><div class="offer-steps">${copy.offerSteps?.map((step) => `<p>${escapeHtml(step)}</p>`).join('') ?? ''}</div></section><button class="button button-primary" data-action="continue">Take this to the summit</button>`
+          ? `<section class="offer-card"><p class="eyebrow">THE OFFER</p><div class="offer-steps">${copy.offerSteps?.map((step) => `<p>${escapeHtml(step)}</p>`).join('') ?? ''}</div></section><button class="button button-primary" data-action="continue">${continueLabel(state.skin.tone, 'Take this to the summit')}</button>`
           : renderSummit(state)
-  return `<section class="scene scene-${state.scene.replace('-', '')}"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${questions}${controls}${objectionsPanel(state.scene, state)}</section>`
+  return `<section class="scene scene-${state.scene.replace('-', '')}"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1>${sceneText(copy, state.skin.tone)}${questions}${controls}${objectionsPanel(state.scene, state)}</section>`
 }
 
-function streamNarration(root: HTMLElement): void {
+function cancelNarration(): void {
+  if (narrationTimer !== undefined) window.clearTimeout(narrationTimer)
+  narrationTimer = undefined
+}
+
+function streamNarration(root: HTMLElement, animate: boolean): void {
+  cancelNarration()
   const target = root.querySelector<HTMLElement>('[data-narration]')
   if (!target) return
   const text = target.dataset.narration ?? ''
   target.removeAttribute('data-narration')
+  if (!animate) {
+    target.textContent = text
+    return
+  }
   let index = 0
-  let timer: number | undefined
   const draw = () => {
     target.textContent = text.slice(0, index)
     if (index < text.length) {
       index += 1
-      timer = window.setTimeout(draw, 30)
+      narrationTimer = window.setTimeout(draw, 30)
     }
   }
   target.addEventListener('click', () => {
-    if (timer) window.clearTimeout(timer)
+    cancelNarration()
     target.textContent = text
   }, { once: true })
   draw()
 }
 
 function render(root: HTMLElement, state: PitchState): void {
+  const animateNarration = narrationScene !== state.scene
+  cancelNarration()
   root.innerHTML = `${hud(state)}<main class="pitch-shell"><nav class="pitch-nav"><a href="/">AI JUNGLE</a><a href="/evolution">Public ledger ↗</a></nav>${renderScene(state)}<footer class="pitch-footer"><span>Human-directed, AI-executed.</span><a href="/method">Rethink · Build · Operate · Train</a></footer></main><div class="why-popover" hidden>We use your stated context to select copy, proof emphasis, section order, and CTA. The seed is reproducible. Turn tuning off to see a generic skin.</div>${bookingModal(state)}`
-  streamNarration(root)
+  narrationScene = state.scene
+  streamNarration(root, animateNarration)
   root.querySelectorAll<HTMLButtonElement>('[data-choice-group]').forEach((button) => button.addEventListener('click', () => {
     const group = button.dataset.choiceGroup as keyof typeof contextChoices
     choices[group] = button.dataset.choiceValue
@@ -282,12 +321,18 @@ function render(root: HTMLElement, state: PitchState): void {
   root.querySelectorAll<HTMLButtonElement>('[data-queue-item]').forEach((button) => button.addEventListener('click', () => { button.classList.add('is-cleared'); button.disabled = true; capture('approval_demo_tap', { item: button.dataset.queueItem }) }))
   root.querySelector<HTMLButtonElement>('[data-action="generic"]')?.addEventListener('click', () => setGenericMode(!state.genericMode))
   root.querySelector<HTMLButtonElement>('[data-action="why"]')?.addEventListener('click', () => { const popover = root.querySelector<HTMLElement>('.why-popover'); if (popover) popover.hidden = !popover.hidden })
-  root.querySelector<HTMLButtonElement>('[data-action="hud-toggle"]')?.addEventListener('click', () => { const hudElement = root.querySelector<HTMLElement>('.hud'); const expanded = hudElement?.classList.toggle('is-collapsed') === false; buttonState(root, expanded) })
+  root.querySelector<HTMLButtonElement>('[data-action="hud-toggle"]')?.addEventListener('click', () => {
+    hudCollapsed = !hudCollapsed
+    try { sessionStorage.setItem('living-pitch-hud-collapsed-v1', String(hudCollapsed)) } catch { /* HUD preference is optional. */ }
+    const hudElement = root.querySelector<HTMLElement>('.hud')
+    hudElement?.classList.toggle('is-collapsed', hudCollapsed)
+    buttonState(root, !hudCollapsed)
+  })
   root.querySelectorAll<HTMLButtonElement>('[data-booking-slot]').forEach((button) => button.addEventListener('click', () => {
     const start = button.dataset.bookingSlot
     if (start) prefillHumanBooking(start)
   }))
-  root.querySelector<HTMLButtonElement>('[data-action="close-booking"]')?.addEventListener('click', () => dismissBooking())
+  root.querySelectorAll<HTMLButtonElement>('[data-action="close-booking"]').forEach((button) => button.addEventListener('click', () => cancelBooking()))
   root.querySelector<HTMLButtonElement>('[data-action="download-map"]')?.addEventListener('click', () => {
     capture('preliminary_map_download', { channel: 'human' })
     window.print()
@@ -304,7 +349,7 @@ function render(root: HTMLElement, state: PitchState): void {
     const email = form.get('email')
     const notes = form.get('notes')
     if (typeof name !== 'string' || typeof email !== 'string' || typeof notes !== 'string') return
-    void confirmBooking({ start: current.prefill.start, name, email, notes })
+    void confirmBooking({ start: current.prefill.start, nonce: current.prefill.nonce, name, email, notes })
   })
   root.querySelectorAll<HTMLAnchorElement>('[data-action="cta"]').forEach((link) => link.addEventListener('click', () => capture('pitch_cta_click', { href: link.href })))
   if (state.scene === 'summit' && state.bookingSlots.status === 'idle') void loadBookingSlots()
@@ -313,10 +358,10 @@ function render(root: HTMLElement, state: PitchState): void {
 async function loadBookingSlots(): Promise<void> {
   setBookingSlotsLoading()
   try {
-    const response = await fetch('/api/cal/slots?days=7', { headers: { Accept: 'application/json' } })
+    const response = await fetch('/api/cal/slots?days=7', { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000) })
     const payload: unknown = await response.json()
     if (!response.ok || !isRecord(payload) || !Array.isArray(payload.slots)) throw new Error('Could not load booking slots.')
-    const slots = payload.slots.flatMap((slot) => isRecord(slot) && typeof slot.start === 'string' ? [slot.start] : [])
+    const slots = payload.slots.flatMap((slot) => isRecord(slot) && typeof slot.start === 'string' && typeof slot.nonce === 'string' ? [{ start: slot.start, nonce: slot.nonce }] : [])
     if (slots.length !== payload.slots.length) throw new Error('The booking service returned invalid slots.')
     setBookingSlots(slots)
   } catch (error) {
@@ -327,11 +372,15 @@ async function loadBookingSlots(): Promise<void> {
 async function confirmBooking(prefill: BookingPrefill): Promise<void> {
   updateBookingPrefill(prefill)
   markBookingSubmitting()
+  const controller = new AbortController()
+  bookingAbortController = controller
   try {
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15000)])
     const response = await fetch('/api/cal/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(prefill),
+      signal,
     })
     const payload: unknown = await response.json()
     if (!response.ok) {
@@ -343,8 +392,21 @@ async function confirmBooking(prefill: BookingPrefill): Promise<void> {
     }
     markBookingBooked(prefill.start)
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError' && getPitchState().booking.status === 'idle') return
+    if (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+      markBookingError('Booking timed out. Try again or choose another slot.')
+      return
+    }
     markBookingError(error instanceof Error ? error.message : 'Could not book this call.')
+  } finally {
+    if (bookingAbortController === controller) bookingAbortController = null
   }
+}
+
+function cancelBooking(): void {
+  bookingAbortController?.abort()
+  bookingAbortController = null
+  dismissBooking()
 }
 
 function buttonState(root: HTMLElement, expanded: boolean): void {
@@ -352,11 +414,18 @@ function buttonState(root: HTMLElement, expanded: boolean): void {
   button?.setAttribute('aria-expanded', String(expanded))
 }
 
-export function renderPitch(root: HTMLElement): void {
+export function renderPitch(root: HTMLElement): () => void {
   const unsubscribe = subscribe((state) => render(root, state))
   render(root, getPitchState())
-  root.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') unsubscribe()
-  }, { once: true })
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && getPitchState().booking.status !== 'idle' && getPitchState().booking.status !== 'booked') cancelBooking()
+  }
+  root.addEventListener('keydown', handleKeyDown)
   capture('pitch_view')
+  return () => {
+    cancelNarration()
+    narrationScene = null
+    unsubscribe()
+    root.removeEventListener('keydown', handleKeyDown)
+  }
 }

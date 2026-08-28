@@ -1,5 +1,6 @@
 import { capture } from './analytics.ts'
 import { getQuestion, validateScanAnswer, type ScorecardAnswers } from './scan/index.ts'
+import { stageRender } from './engine/scenes.ts'
 import {
   answerScanQuestion,
   choosePath,
@@ -24,6 +25,15 @@ type ModelContext = {
   registerTool?: (tool: ToolDefinition) => void | Promise<void>
   register?: (tool: ToolDefinition) => void | Promise<void>
 }
+
+export type WebMcpRegistryStatus = {
+  status: 'unavailable' | 'installed' | 'partial'
+  attempted: number
+  registered: number
+  failed: Array<{ tool: string; error: string }>
+}
+
+let registryStatus: WebMcpRegistryStatus = { status: 'unavailable', attempted: 0, registered: 0, failed: [] }
 
 declare global {
   interface Navigator { modelContext?: ModelContext }
@@ -143,15 +153,14 @@ export const tools: ToolDefinition[] = [
   },
   {
     name: 'raise_objection',
-    description: 'Put a human or agent objection on stage and answer it from the approved proof pool. It records the objection and never generates live copy.',
-    inputSchema: { type: 'object', additionalProperties: false, required: ['topic'], properties: { topic: { type: 'string' }, detail: { type: 'string' } } },
+    description: 'Put an agent objection on stage with the agent\'s exact detail and answer it from the approved proof pool. It records the objection and never generates live copy.',
+    inputSchema: { type: 'object', additionalProperties: false, required: ['topic', 'detail'], properties: { topic: { type: 'string' }, detail: { type: 'string' } } },
     execute: (input) => timedCall('raise_objection', () => {
-      const value = readObject(input, 'topic is required. Use a visible canned objection label or id.')
-      if (typeof value.topic !== 'string') throw new Error('topic is required. Use a visible canned objection label or id.')
-      const detail = typeof value.detail === 'string' ? value.detail : undefined
-      const result = raiseObjection(value.topic, detail)
+      const value = readObject(input, 'topic and detail are required. Use a visible canned objection label or id and include the agent\'s exact question.')
+      if (typeof value.topic !== 'string' || typeof value.detail !== 'string' || value.detail.trim().length === 0) throw new Error('topic and detail are required. Include the agent\'s exact question.')
+      const result = raiseObjection(value.topic, value.detail.trim(), 'agent')
       return {
-        stage_render: `${detail ? 'Your agent asks' : 'You ask'}: ${result.objection.topic}`,
+        stage_render: stageRender(result.objection),
         answer: result.objection.answer,
         state: result.state,
       }
@@ -219,14 +228,31 @@ export const tools: ToolDefinition[] = [
 
 export async function installWebMcpTools(pathname = '/'): Promise<boolean> {
   const modelContext = navigator.modelContext
+  registryStatus = { status: 'unavailable', attempted: 0, registered: 0, failed: [] }
   if (!modelContext) return false
   const register = modelContext.registerTool ?? modelContext.register
   if (!register) return false
   const availableTools = pathname === '/'
     ? tools
     : tools.filter((tool) => tool.name !== 'book_assessment_call')
-  for (const tool of availableTools) await register.call(modelContext, tool)
-  return true
+  registryStatus = { status: 'installed', attempted: availableTools.length, registered: 0, failed: [] }
+  for (const tool of availableTools) {
+    try {
+      await register.call(modelContext, tool)
+      registryStatus.registered += 1
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      registryStatus.failed.push({ tool: tool.name, error: message })
+      capture('webmcp_registry_error', { tool: tool.name, error: message, channel: 'agent' })
+    }
+  }
+  registryStatus.status = registryStatus.failed.length === 0 ? 'installed' : 'partial'
+  capture('webmcp_registry_status', { status: registryStatus.status, attempted: registryStatus.attempted, registered: registryStatus.registered, failed: registryStatus.failed.length, channel: 'agent' })
+  return registryStatus.registered > 0
+}
+
+export function getWebMcpRegistryStatus(): WebMcpRegistryStatus {
+  return { ...registryStatus, failed: registryStatus.failed.map((item) => ({ ...item })) }
 }
 
 export { tools as webMcpTools }
