@@ -18,5 +18,15 @@
     "approved_by": "Loic",
     "latency_s": 103,
     "verified": false
+  },
+  {
+    "id": 3,
+    "ts": "2026-08-28T18:31:56Z",
+    "title": "body T0 to T2: ship the playable Living Pitch",
+    "detail": "PR #7 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "Loic",
+    "latency_s": 49,
+    "verified": false
   }
 ]
