@@ -50,6 +50,16 @@ export type ObjectionLog = {
   at: string
 }
 
+export type ResidentAction = { kind: 'advance_beat' | 'open_view' | 'propose_route'; target: string }
+
+export type ResidentExchange = {
+  channel: 'human' | 'agent'
+  message: string
+  answer_for_agent: string
+  stage_render: string
+  action: ResidentAction | null
+}
+
 export type BookingSlot = { start: string; nonce: string }
 
 export type ChoiceLog = {
@@ -59,7 +69,7 @@ export type ChoiceLog = {
 }
 
 export type PitchState = {
-  schemaVersion: 2
+  schemaVersion: 3
   scene: SceneId
   skin: Skin
   context: Context | null
@@ -68,6 +78,8 @@ export type PitchState = {
   scoreStatus: 'unavailable' | 'partial' | 'final'
   eurosRecoverable: LeverageResult['eurosRecoverable']
   objectionsRaised: ObjectionLog[]
+  residentExchange: ResidentExchange | null
+  residentExchanges: ResidentExchange[]
   beatsCovered: string[]
   choicesLog: ChoiceLog[]
   booking: BookingStatus

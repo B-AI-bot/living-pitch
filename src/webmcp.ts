@@ -1,14 +1,18 @@
 import { capture } from './analytics.ts'
 import { proposeMutation, stageAgentMutation, type MutationType } from './colony.ts'
 import { requestRoast, stageAgentRoast, type RoastIntensity } from './roast.ts'
+import { isResidentEnabled, requestResident, residentSessionState } from './resident.ts'
 import { getQuestion, validateScanAnswer, type ScorecardAnswers } from './scan/index.ts'
 import { stageRender } from './engine/scenes.ts'
 import {
   answerScanQuestion,
+  applyResidentAction,
   choosePath,
   generateMap,
+  getPitchState,
   getPitchSummary,
   offerFacts,
+  recordResidentExchange,
   raiseObjection,
   requestBookingPrefill,
   runLeverageScore,
@@ -184,6 +188,31 @@ export const tools: ToolDefinition[] = [
       if (input === undefined) return offerFacts()
       const value = readObject(input, 'topic must be a string.')
       return offerFacts(typeof value.topic === 'string' ? value.topic : undefined)
+    }),
+  },
+  {
+    name: 'talk_to_resident',
+    description: 'Ask Baibot, the Living Pitch Resident, one grounded question for the human. It returns an answer for the agent, stages the exact question as "Your agent asks: ...", and never advances or books anything automatically. If the Resident is disabled, return the warming_up status honestly and use the visible canned objection chips.',
+    inputSchema: { type: 'object', additionalProperties: false, required: ['message'], properties: { message: { type: 'string', description: 'The exact question from the human or agent.' } } },
+    execute: (input) => timedCall('talk_to_resident', async () => {
+      const value = readObject(input, 'message is required.')
+      if (typeof value.message !== 'string' || !value.message.trim()) throw new Error('message is required and must be a non-empty string.')
+      const message = value.message.trim()
+      if (!isResidentEnabled()) {
+        const stage_render = `Your agent asks: ${message}`
+        recordResidentExchange({ channel: 'agent', message, answer_for_agent: 'The resident is warming up. Here is what I can answer today.', stage_render, action: null })
+        return { status: 'warming_up', fallback: 'canned', description: 'Baibot is disabled for tonight\'s red-team. Ask again when the Resident flag is enabled, or use a visible canned objection chip.' }
+      }
+      const response = await requestResident({ message, state: residentSessionState(getPitchState()), channel: 'agent' })
+      if ('status' in response) {
+        const stage_render = `Your agent asks: ${message}`
+        recordResidentExchange({ channel: 'agent', message, answer_for_agent: 'The resident is warming up. Here is what I can answer today.', stage_render, action: null })
+        return { status: response.status, fallback: response.fallback, description: 'Baibot is warming up. Use a visible canned objection chip while the Resident is disabled.' }
+      }
+      const stage_render = `Your agent asks: ${message}`
+      if (response.action) applyResidentAction(response.action)
+      recordResidentExchange({ channel: 'agent', message, answer_for_agent: response.answer_for_agent, stage_render, action: response.action })
+      return { answer_for_agent: response.answer_for_agent, stage_render, action: response.action }
     }),
   },
   {

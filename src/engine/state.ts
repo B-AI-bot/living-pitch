@@ -3,10 +3,10 @@ import { getQuestion, getScanQuestions, validateScanAnswer } from '../scan/index
 import { findObjection, objectionLog } from './scenes.ts'
 import { generatePreliminaryMap, scoreSummit } from './summit.ts'
 import type { ScorecardAnswers } from '../scan/index.ts'
-import type { BookingPrefill, BookingSlot, BookingSlots, BookingStatus, Context, Industry, ObjectionLog, PitchState, SceneId, Skin, Tone } from './types.ts'
+import type { BookingPrefill, BookingSlot, BookingSlots, BookingStatus, Context, Industry, ObjectionLog, PitchState, ResidentAction, ResidentExchange, SceneId, Skin, Tone } from './types.ts'
 
 const STORAGE_KEY = 'living-pitch-state-v2'
-const SCHEMA_VERSION = 2 as const
+const SCHEMA_VERSION = 3 as const
 const listeners = new Set<(state: PitchState) => void>()
 
 function hash(value: string): string {
@@ -46,6 +46,8 @@ function initialState(): PitchState {
     scoreStatus: 'unavailable',
     eurosRecoverable: { low: 0, high: 0 },
     objectionsRaised: [],
+    residentExchange: null,
+    residentExchanges: [],
     beatsCovered: [],
     choicesLog: [],
     booking: { status: 'idle' },
@@ -120,6 +122,15 @@ function isObjectionLog(value: unknown): value is ObjectionLog {
     && typeof value.answer === 'string' && (value.source === 'human' || value.source === 'agent') && typeof value.at === 'string'
 }
 
+function isResidentExchange(value: unknown): value is ResidentExchange {
+  if (!isRecord(value)) return false
+  if (value.channel !== 'human' && value.channel !== 'agent') return false
+  if (typeof value.message !== 'string' || typeof value.answer_for_agent !== 'string' || typeof value.stage_render !== 'string') return false
+  if (value.action === null) return true
+  if (!isRecord(value.action) || (value.action.kind !== 'advance_beat' && value.action.kind !== 'open_view' && value.action.kind !== 'propose_route') || typeof value.action.target !== 'string' || !value.action.target.trim()) return false
+  return true
+}
+
 function isPitchState(value: unknown): value is PitchState {
   if (!isRecord(value) || value.schemaVersion !== SCHEMA_VERSION || !isSceneId(value.scene) || !isRecord(value.skin)) return false
   const skin = value.skin
@@ -131,7 +142,7 @@ function isPitchState(value: unknown): value is PitchState {
   }
   if (!isAnswers(value.answers) || (value.score !== null && typeof value.score !== 'number') || typeof value.scoreStatus !== 'string' || !['unavailable', 'partial', 'final'].includes(value.scoreStatus)) return false
   if (!isRecord(value.eurosRecoverable) || typeof value.eurosRecoverable.low !== 'number' || typeof value.eurosRecoverable.high !== 'number') return false
-  if (!Array.isArray(value.objectionsRaised) || !value.objectionsRaised.every(isObjectionLog) || !Array.isArray(value.beatsCovered) || !value.beatsCovered.every((item) => typeof item === 'string') || !Array.isArray(value.choicesLog)) return false
+  if (!Array.isArray(value.objectionsRaised) || !value.objectionsRaised.every(isObjectionLog) || (value.residentExchange !== null && !isResidentExchange(value.residentExchange)) || !Array.isArray(value.residentExchanges) || !value.residentExchanges.every(isResidentExchange) || !Array.isArray(value.beatsCovered) || !value.beatsCovered.every((item) => typeof item === 'string') || !Array.isArray(value.choicesLog)) return false
   if (!value.choicesLog.every((item) => isRecord(item) && typeof item.choiceId === 'string' && isSceneId(item.scene) && typeof item.at === 'string')) return false
   return storedBooking(value.booking) !== null && storedBookingSlots(value.bookingSlots) !== null && typeof value.agentBriefed === 'boolean' && typeof value.genericMode === 'boolean'
 }
@@ -143,10 +154,13 @@ function loadState(): PitchState {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
-      if (isPitchState(parsed)) {
-        const booking = storedBooking(parsed.booking)
+      const candidate = isRecord(parsed) && parsed.schemaVersion === 2
+        ? { ...parsed, schemaVersion: SCHEMA_VERSION, residentExchange: null, residentExchanges: [] }
+        : parsed
+      if (isPitchState(candidate)) {
+        const booking = storedBooking(candidate.booking)
         if (!booking) return initialState()
-        return { ...parsed, booking, bookingSlots: { status: 'idle' } }
+        return { ...candidate, booking, bookingSlots: { status: 'idle' } }
       }
     }
   } catch {
@@ -284,6 +298,29 @@ export function raiseObjection(topic: string, detail: string | null = null, sour
   capture('objection_raised', { topic: entry.topic, channel: source })
   emit()
   return { state: getPitchState(), objection: entry }
+}
+
+export function recordResidentExchange(exchange: ResidentExchange): PitchState {
+  const entry = { ...exchange, action: exchange.action ? { ...exchange.action } : null }
+  state.residentExchange = entry
+  state.residentExchanges = [...state.residentExchanges, entry].slice(-20)
+  capture('resident_exchange', { channel: exchange.channel })
+  if (exchange.action) capture('resident_route_decision', { channel: exchange.channel, kind: exchange.action.kind, target: exchange.action.target })
+  emit()
+  return getPitchState()
+}
+
+export function applyResidentAction(action: ResidentAction): PitchState {
+  const next: Record<SceneId, SceneId> = {
+    basecamp: 'pipeline',
+    pipeline: 'follow-through',
+    'follow-through': 'speed',
+    speed: 'memory-cash',
+    'memory-cash': 'summit',
+    summit: 'summit',
+  }
+  if (action.kind === 'advance_beat' && next[state.scene] === action.target && state.scene !== 'summit') return advanceScene()
+  return getPitchState()
 }
 
 export function advanceScene(): PitchState {
@@ -517,6 +554,7 @@ export function getPitchSummary(): Record<string, unknown> {
     leaks,
     answers: { ...state.answers },
     objections: state.objectionsRaised.map((item) => ({ topic: item.topic, detail: item.detail, answer: item.answer })),
+    residentExchanges: structuredClone(state.residentExchanges),
     offer: offerFacts(),
     booking: structuredClone(state.booking),
     nextStep: {

@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=%h/projects/living-pitch
+Environment=RESIDENT_ENABLED=0
 EnvironmentFile=-%h/.living-pitch.env
 ExecStart=/usr/bin/python3 %h/projects/living-pitch/ops/api/server.py
 Restart=on-failure
