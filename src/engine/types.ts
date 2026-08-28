@@ -1,6 +1,6 @@
 import type { LeverageResult, ScorecardAnswers } from '../scan/index.ts'
 
-export type SceneId = 'basecamp' | 'pipeline' | 'follow-through' | 'speed' | 'summit'
+export type SceneId = 'basecamp' | 'pipeline' | 'follow-through' | 'speed' | 'memory-cash' | 'summit'
 export type Tone = 'evidence-first' | 'story-reassurance'
 export type Industry = 'saas-recruiting' | 'wealth-advisory' | 'other-services'
 

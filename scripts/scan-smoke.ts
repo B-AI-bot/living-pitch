@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { calculateLeverageScore } from '../src/scan/engine.ts'
 import { getQuestion } from '../src/scan/index.ts'
-import { getSceneCopy } from '../src/engine/scenes.ts'
+import { getSceneCopy, sceneQuestions } from '../src/engine/scenes.ts'
 
 const clean = {
   firm_type: 'consulting', owner_led_confirmation: 'owner_led_yes', team_size: 'team_5_10',
@@ -55,4 +55,19 @@ const genericSpeed = getSceneCopy('speed', {
 })
 assert.match(genericSpeed.proof, /#4 the website that adapts to how you read/)
 assert.match(genericSpeed.narration, /the same discipline runs on the site you are playing right now/)
+
+assert.deepEqual(sceneQuestions['memory-cash'], ['memory_access', 'cash_control'])
+
+const memoryCash = getSceneCopy('memory-cash', {
+  tone: 'evidence-first',
+  industry: 'wealth-advisory',
+  seed: 'smoke',
+  generic: false,
+})
+assert.match(memoryCash.eyebrow, /TERRITORY 04 · MEMORY & CASH/)
+assert.match(memoryCash.narration, /Assessment \(credited\)/)
+assert.match(memoryCash.narration, /First Install \$7,500-15,000 fixed/)
+assert.match(memoryCash.narration, /Partnership from \$5,000\/month plus performance share/)
+assert.match(memoryCash.proof, /Three installable opportunities\. Or you pay nothing\./)
+assert.match(memoryCash.proof, /the fee comes off your first install/)
 console.log('scan smoke ok')

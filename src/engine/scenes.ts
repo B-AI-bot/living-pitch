@@ -6,6 +6,7 @@ export type SceneCopy = {
   title: string
   narration: string
   proof: string
+  offerSteps?: readonly string[]
   caseCard?: readonly string[]
   quote?: string
   attribution?: string
@@ -111,6 +112,19 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
       attribution: firstClientCase.attribution,
     }
   }
+  if (scene === 'memory-cash') {
+    return {
+      eyebrow: 'TERRITORY 04 · MEMORY & CASH',
+      title: 'The context and the cash are already there.',
+      narration: 'Assessment (credited). First Install $7,500-15,000 fixed. Partnership from $5,000/month plus performance share.',
+      proof: 'Three installable opportunities. Or you pay nothing. the fee comes off your first install',
+      offerSteps: [
+        'Assessment (credited)',
+        'First Install $7,500-15,000 fixed',
+        'Partnership from $5,000/month plus performance share',
+      ],
+    }
+  }
   return {
     eyebrow: 'THE SUMMIT',
     title: 'A number, not a vibe.',
@@ -119,10 +133,11 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
   }
 }
 
-export const sceneQuestions: Record<'pipeline' | 'follow-through' | 'speed', string[]> = {
+export const sceneQuestions: Record<'pipeline' | 'follow-through' | 'speed' | 'memory-cash', string[]> = {
   pipeline: ['pipeline_visibility'],
   'follow-through': ['follow_through', 'memory_access'],
   speed: ['speed_to_lead', 'actual_response_time'],
+  'memory-cash': ['memory_access', 'cash_control'],
 }
 
 export const objections: Array<{ id: string; label: string; answer: string; scenes: SceneId[] }> = [

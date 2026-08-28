@@ -44,7 +44,7 @@ function formatEuros(value: number): string {
 }
 
 function sceneIndex(scene: SceneId): number {
-  return ({ basecamp: 0, pipeline: 1, 'follow-through': 2, speed: 3, summit: 5 })[scene]
+  return ({ basecamp: 0, pipeline: 1, 'follow-through': 2, speed: 3, 'memory-cash': 4, summit: 5 })[scene]
 }
 
 function hud(state: PitchState): string {
@@ -107,14 +107,18 @@ function renderScene(state: PitchState): string {
   if (state.scene === 'basecamp') {
     return `<section class="scene scene-basecamp"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${contextPanel(state)}${objectionsPanel('basecamp', state)}</section>`
   }
-  const questions = state.scene === 'pipeline' || state.scene === 'follow-through' || state.scene === 'speed' ? sceneQuestions[state.scene].map((id) => scanQuestion(id, state)).join('') : ''
+  const questions = state.scene === 'pipeline' || state.scene === 'follow-through' || state.scene === 'speed' || state.scene === 'memory-cash'
+    ? sceneQuestions[state.scene].map((id) => scanQuestion(id, state)).join('')
+    : ''
   const controls = state.scene === 'pipeline'
     ? `<div class="path-choice"><p class="eyebrow">Choose the revenue path</p><div class="path-grid"><button data-path="post"><strong>Post</strong><span>Keep the signal alive.</span></button><button data-path="pitch"><strong>Pitch</strong><span>Open the right conversation.</span></button><button data-path="partner"><strong>Partner</strong><span>Build through the network.</span></button></div></div><button class="button button-primary" data-action="continue">Continue to follow-through</button>`
     : state.scene === 'follow-through'
       ? `<div class="ledger-demo"><p class="eyebrow">THE APPROVAL LEDGER, IN PRACTICE</p><h2>0 messages without approval.</h2><div class="queue" aria-label="Approval queue">${['Message draft', 'Quote draft', 'Post draft'].map((item) => `<button data-queue-item="${item}"><span>${item}</span><b>tap yes</b></button>`).join('')}</div><p class="muted">Every decision is logged, timestamped, and inspectable.</p></div><button class="button button-primary" data-action="continue">Continue to speed</button>`
       : state.scene === 'speed'
-        ? `<section class="case-card"><p class="eyebrow">THE CASE CARD</p>${copy.caseCard?.map((line) => `<p>${escapeHtml(line)}</p>`).join('') ?? ''}<blockquote><p>${escapeHtml(copy.quote ?? '')}</p><footer>${escapeHtml(copy.attribution ?? '')}</footer></blockquote></section><button class="button button-primary" data-action="continue">Take this to the summit</button>`
-      : `<div class="summit-card"><p class="muted">${copy.proof}</p><a class="button button-primary" href="/assessment" data-action="cta">Get my 3 installable opportunities →</a><a class="button button-quiet" href="https://cal.welcometotheaijungle.com/loic/intro" data-action="cta">Book my 30-min call</a></div>`
+        ? `<section class="case-card"><p class="eyebrow">THE CASE CARD</p>${copy.caseCard?.map((line) => `<p>${escapeHtml(line)}</p>`).join('') ?? ''}<blockquote><p>${escapeHtml(copy.quote ?? '')}</p><footer>${escapeHtml(copy.attribution ?? '')}</footer></blockquote></section><button class="button button-primary" data-action="continue">Continue to memory & cash</button>`
+        : state.scene === 'memory-cash'
+          ? `<section class="offer-card"><p class="eyebrow">THE OFFER</p><div class="offer-steps">${copy.offerSteps?.map((step) => `<p>${escapeHtml(step)}</p>`).join('') ?? ''}</div></section><button class="button button-primary" data-action="continue">Take this to the summit</button>`
+          : `<div class="summit-card"><p class="muted">${copy.proof}</p><a class="button button-primary" href="${state.skin.tone === 'evidence-first' ? 'https://cal.welcometotheaijungle.com/loic/intro' : '/assessment'}" data-action="cta">${state.skin.tone === 'evidence-first' ? 'Book the 30-min call' : 'Get my 3 installable opportunities →'}</a></div>`
   return `<section class="scene scene-${state.scene.replace('-', '')}"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${questions}${controls}${objectionsPanel(state.scene, state)}</section>`
 }
 

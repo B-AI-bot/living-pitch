@@ -171,7 +171,8 @@ export function advanceScene(): PitchState {
     basecamp: 'pipeline',
     pipeline: 'follow-through',
     'follow-through': 'speed',
-    speed: 'summit',
+    speed: 'memory-cash',
+    'memory-cash': 'summit',
     summit: 'summit',
   }
   cover(state.scene)
