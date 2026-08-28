@@ -14,6 +14,8 @@ export type SummitScore = {
   topLeak: LeakDimension | null
   eurosPerWeek: { low: number; high: number }
   complete: boolean
+  economicInputsComplete: boolean
+  estimateFormula: string | null
   dimensions: Record<LeakDimension, number>
 }
 
@@ -48,6 +50,17 @@ export type PreliminaryMap = {
     context: Context | null
     answers: ScorecardAnswers
   }
+}
+
+export type MissingField = {
+  id: string
+  label: string
+  options?: Array<{ value: string; label: string }>
+}
+
+export type MissingFieldsResult = {
+  status: 'missing_fields'
+  missing_fields: MissingField[]
 }
 
 type DimensionLink = {
@@ -135,6 +148,8 @@ export function scoreSummit(answers: ScorecardAnswers): SummitScore {
       high: Math.round(result.eurosRecoverable.high / WEEKS_PER_MONTH),
     },
     complete: result.complete,
+    economicInputsComplete: result.economicInputsComplete,
+    estimateFormula: result.estimateFormula,
     dimensions: {
       pipeline: result.dimensionScores.pipeline,
       'follow-through': result.dimensionScores.followThrough,

@@ -29,6 +29,8 @@ npm run dev
 
 The site is deliberately small: Vite, TypeScript, and browser APIs. WebMCP is progressive enhancement. A browser without `navigator.modelContext` gets the human experience without an error.
 
+Booking slots carry a short-lived HMAC nonce bound to the slot. The worker verifies and consumes that nonce, then rechecks availability before calling Cal.com. The in-memory IP quota is best-effort protection in addition to the nonce and is not a durable Cloudflare rate limit. The checked-in `BOOKING_NONCE_SECRET` is development-only; production must set it with `wrangler secret put BOOKING_NONCE_SECRET`.
+
 ## Ledger
 
 The ledger bot watches open pull requests, asks for a decision in Telegram, checks the diff for unpublished names, and merges only after the human approval. It then records the mutation in `public/mutations.json` and pushes the receipt to the public branch.
