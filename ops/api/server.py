@@ -42,8 +42,10 @@ for _key, _value in ():  # Keep import-time configuration side-effect free in te
     os.environ.setdefault(_key, _value)
 
 ALLOWED_ORIGINS = {
-    "https://living-pitch.welcometotheaijungle.workers.dev",
+    # The workers.dev account subdomain is welcometoaijungle, without "the".
+    "https://living-pitch.welcometoaijungle.workers.dev",
     "https://welcometotheaijungle.com",
+    "https://www.welcometotheaijungle.com",
 }
 USER_AGENT = "LivingPitch-Roast/1.0 (+https://welcometotheaijungle.com/roast)"
 MAX_PAGE_BYTES = 2 * 1024 * 1024
