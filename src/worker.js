@@ -314,6 +314,22 @@ export default {
       headers.delete("ETag");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    return env.ASSETS.fetch(request);
+    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/mutations.json", "/llms.txt", "/favicon.ico", "/robots.txt"]);
+    const path = url.pathname.replace(/\/$/, "") || "/";
+    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/api/")) {
+      return env.ASSETS.fetch(request);
+    }
+    // Cutover safety net: any path this app does not serve falls through to the
+    // previous site (same app, alternate hostname), so indexed pages, articles
+    // and the lead form never 404 during the transition.
+    const legacy = new URL(url.pathname + url.search, "https://front-staging.welcometotheaijungle.com");
+    try {
+      const upstream = await fetch(new Request(legacy, { method: request.method, headers: request.headers, body: request.body }), { redirect: "manual" });
+      const headers = new Headers(upstream.headers);
+      headers.set("X-Living-Pitch-Passthrough", "legacy");
+      return new Response(upstream.body, { status: upstream.status, headers });
+    } catch {
+      return env.ASSETS.fetch(request);
+    }
   },
 };
