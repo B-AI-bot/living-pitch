@@ -128,5 +128,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": false
+  },
+  {
+    "id": 14,
+    "ts": "2026-08-28T23:49:18Z",
+    "title": "fix(worker): actually run the worker first for every non-asset path",
+    "detail": "PR #22 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 6,
+    "verified": false
   }
 ]
