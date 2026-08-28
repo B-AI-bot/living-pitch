@@ -13,7 +13,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
 fi
 
-if rg -n '—' src README.md; then
+if rg -n $'\u2014' src README.md; then
   echo 'em dash scan failed' >&2
   exit 1
 fi
