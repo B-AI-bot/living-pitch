@@ -3,31 +3,31 @@
     "id": 1,
     "ts": "2026-08-28T18:09:59Z",
     "title": "feat: add the public evolution changelog",
-    "detail": "PR #2 shipped through the approval ledger.",
+    "detail": "PR #2 shipped through the approval ledger. Verified live by a played end to end pass on 2026-08-28.",
     "proposed_by": "B-AI-bot",
     "approved_by": "Loic",
     "latency_s": 2780,
-    "verified": false
+    "verified": true
   },
   {
     "id": 2,
     "ts": "2026-08-28T18:19:09Z",
     "title": "harden the ledger: survive stale callbacks, deploy on merge",
-    "detail": "PR #4 shipped through the approval ledger.",
+    "detail": "PR #4 shipped through the approval ledger. Verified live by a played end to end pass on 2026-08-28.",
     "proposed_by": "B-AI-bot",
     "approved_by": "Loic",
     "latency_s": 103,
-    "verified": false
+    "verified": true
   },
   {
     "id": 3,
     "ts": "2026-08-28T18:31:56Z",
     "title": "body T0 to T2: ship the playable Living Pitch",
-    "detail": "PR #7 shipped through the approval ledger.",
+    "detail": "PR #7 shipped through the approval ledger. Verified live by a played end to end pass on 2026-08-28.",
     "proposed_by": "B-AI-bot",
     "approved_by": "Loic",
     "latency_s": 49,
-    "verified": false
+    "verified": true
   },
   {
     "id": 4,
