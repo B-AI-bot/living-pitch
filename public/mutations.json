@@ -68,5 +68,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 5,
     "verified": true
+  },
+  {
+    "id": 8,
+    "ts": "2026-08-28T21:08:17Z",
+    "title": "body T3 to Summit: proof, offer, score reveal and the confirmation-gated booking",
+    "detail": "PR #13 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 5,
+    "verified": false
   }
 ]
