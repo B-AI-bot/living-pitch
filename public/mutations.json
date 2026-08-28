@@ -38,5 +38,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 0,
     "verified": true
+  },
+  {
+    "id": 5,
+    "ts": "2026-08-28T18:37:59Z",
+    "title": "fix(ledger): deploy fresh main + run_worker_first for the ledger route",
+    "detail": "PR #9 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 5,
+    "verified": false
   }
 ]
