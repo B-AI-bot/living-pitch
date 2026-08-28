@@ -1,7 +1,9 @@
 import { capture } from '../analytics.ts'
 import { calculateLeverageScore, getQuestion, validateScanAnswer } from '../scan/index.ts'
 import { findObjection, objectionLog } from './scenes.ts'
-import type { Context, Industry, PitchState, SceneId, Skin, Tone } from './types.ts'
+import { generatePreliminaryMap, scoreSummit } from './summit.ts'
+import type { ScorecardAnswers } from '../scan/index.ts'
+import type { BookingPrefill, BookingStatus, Context, Industry, PitchState, SceneId, Skin, Tone } from './types.ts'
 
 const STORAGE_KEY = 'living-pitch-state-v1'
 const listeners = new Set<(state: PitchState) => void>()
@@ -43,6 +45,8 @@ function initialState(): PitchState {
     objectionsRaised: [],
     beatsCovered: [],
     choicesLog: [],
+    booking: { status: 'idle' },
+    bookingSlots: { status: 'idle' },
     agentBriefed: false,
     genericMode: false,
   }
@@ -88,7 +92,7 @@ function cover(beat: string): void {
 }
 
 export function getPitchState(): PitchState {
-  return JSON.parse(JSON.stringify(state)) as PitchState
+  return structuredClone(state)
 }
 
 export function subscribe(listener: (next: PitchState) => void): () => void {
@@ -103,7 +107,7 @@ export function setContext(input: {
   priorities?: string[]
   tone?: string
   style?: string
-  source?: 'human' | 'agent'
+  source?: 'human' | 'agent' | 'replay'
 }): PitchState {
   const industry = normalizeIndustry(input.industry)
   const style = input.style ?? input.tone ?? 'team buy-in'
@@ -202,6 +206,102 @@ export function resetPitch(): PitchState {
   return getPitchState()
 }
 
+export function runLeverageScore(answers: ScorecardAnswers = {}) {
+  return scoreSummit({ ...state.answers, ...answers })
+}
+
+export function generateMap(domain?: string) {
+  return generatePreliminaryMap({ context: state.context, answers: state.answers, domain })
+}
+
+export function requestBookingPrefill(input: Omit<BookingPrefill, 'notes'>): BookingStatus {
+  if (state.booking.status === 'booked' && state.booking.start === input.start) return structuredClone(state.booking)
+  state.booking = {
+    status: 'awaiting_human_confirmation',
+    prefill: { ...input, notes: '' },
+  }
+  capture('booking_prefilled', { channel: 'agent', start: input.start })
+  emit()
+  return structuredClone(state.booking)
+}
+
+export function prefillHumanBooking(start: string): PitchState {
+  state.booking = {
+    status: 'awaiting_human_confirmation',
+    prefill: { start, name: '', email: '', notes: '' },
+  }
+  capture('booking_slot_selected', { channel: 'human', start })
+  emit()
+  return getPitchState()
+}
+
+export function updateBookingPrefill(prefill: BookingPrefill): PitchState {
+  if (state.booking.status !== 'awaiting_human_confirmation' && state.booking.status !== 'booking_error') return getPitchState()
+  state.booking = { status: 'awaiting_human_confirmation', prefill: { ...prefill } }
+  emit()
+  return getPitchState()
+}
+
+export function markBookingSubmitting(): PitchState {
+  if (state.booking.status !== 'awaiting_human_confirmation' && state.booking.status !== 'booking_error') return getPitchState()
+  state.booking = { status: 'booking', prefill: { ...state.booking.prefill } }
+  emit()
+  return getPitchState()
+}
+
+export function markBookingBooked(start: string): PitchState {
+  state.booking = { status: 'booked', start }
+  capture('booking_confirmed', { channel: 'human', start })
+  emit()
+  return getPitchState()
+}
+
+export function markBookingError(message: string): PitchState {
+  if (state.booking.status !== 'booking') return getPitchState()
+  state.booking = { status: 'booking_error', prefill: { ...state.booking.prefill }, message }
+  capture('booking_failed', { channel: 'human' })
+  emit()
+  return getPitchState()
+}
+
+export function dismissBooking(): PitchState {
+  if (state.booking.status === 'booked') return getPitchState()
+  state.booking = { status: 'idle' }
+  emit()
+  return getPitchState()
+}
+
+export function setBookingSlotsLoading(): PitchState {
+  state.bookingSlots = { status: 'loading' }
+  emit()
+  return getPitchState()
+}
+
+export function setBookingSlots(slots: string[]): PitchState {
+  state.bookingSlots = { status: 'ready', slots: [...slots] }
+  emit()
+  return getPitchState()
+}
+
+export function setBookingSlotsError(message: string): PitchState {
+  state.bookingSlots = { status: 'error', message }
+  emit()
+  return getPitchState()
+}
+
+export function replayAsSomeoneElse(): PitchState {
+  const current = state.context?.industry
+  const profiles: Record<Industry, { industry: Industry; size: string; style: string }> = {
+    'saas-recruiting': { industry: 'wealth-advisory', size: 'team_11_25', style: 'team buy-in' },
+    'wealth-advisory': { industry: 'other-services', size: 'team_5_10', style: 'speed' },
+    'other-services': { industry: 'saas-recruiting', size: 'team_5_10', style: 'numbers' },
+  }
+  const profile = profiles[current ?? 'other-services']
+  state = initialState()
+  capture('pitch_replay', { industry: profile.industry })
+  return setContext({ ...profile, source: 'replay' })
+}
+
 export function offerFacts(topic?: string): Record<string, unknown> {
   return {
     topic: topic ?? 'full offer',
@@ -226,5 +326,30 @@ export function stateForAgent(): Record<string, unknown> {
     ...result,
     availableChoices: result.scene === 'pipeline' ? ['post', 'pitch', 'partner'] : [],
     next: result.scene === 'summit' ? 'Review the estimate and choose the assessment or 30-minute call.' : 'Ask the human for missing context or use the visible choices, then call get_pitch_state again.',
+  }
+}
+
+export function getPitchSummary(): Record<string, unknown> {
+  const score = runLeverageScore()
+  const leaks = Object.entries(score.dimensions)
+    .map(([dimension, severity]) => ({ dimension, severity }))
+    .sort((left, right) => right.severity - left.severity)
+  const bookableSlot = state.booking.status === 'booked'
+    ? state.booking.start
+    : state.bookingSlots.status === 'ready'
+      ? state.bookingSlots.slots[0] ?? null
+      : null
+  return {
+    score,
+    leaks,
+    answers: { ...state.answers },
+    objections: state.objectionsRaised.map((item) => ({ topic: item.topic, detail: item.detail, answer: item.answer })),
+    offer: offerFacts(),
+    booking: structuredClone(state.booking),
+    nextStep: {
+      action: state.booking.status === 'booked' ? 'Attend the confirmed assessment call.' : 'Choose a slot and confirm the assessment call in the visible modal.',
+      bookableSlot,
+      agentRole: 'The agent attends the webinar and writes the briefing.',
+    },
   }
 }
