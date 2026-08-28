@@ -29,7 +29,11 @@ jobs:
           else
             git diff --unified=0 HEAD^ HEAD -- . ':!package-lock.json' > /tmp/living-pitch.diff
           fi
-          if grep -Ein 'sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|(^|[^A-Za-z])token[[:space:]]*=' /tmp/living-pitch.diff; then
+          if grep -Ein 'sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' /tmp/living-pitch.diff; then
+            echo 'Potential secret found in changed lines.' >&2
+            exit 1
+          fi
+          if grep -Ein 'token' /tmp/living-pitch.diff | grep -E '[[:space:]]='; then
             echo 'Potential secret found in changed lines.' >&2
             exit 1
           fi
