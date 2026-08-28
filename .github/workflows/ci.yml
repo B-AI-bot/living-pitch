@@ -33,6 +33,12 @@ jobs:
             echo 'Potential secret found in changed lines.' >&2
             exit 1
           fi
+          # The browser project key is public and intentionally lives in the client.
+          # Any other phc_ value is treated as a leaked PostHog credential.
+          if grep -Ein 'phc_[A-Za-z0-9]{16,}' /tmp/living-pitch.diff | grep -v 'POSTHOG_KEY'; then
+            echo 'Unexpected PostHog credential found in changed lines.' >&2
+            exit 1
+          fi
           needle='to'
           needle="${needle}ken"
           if grep -Ein "$needle[[:space:]]*=" /tmp/living-pitch.diff; then
