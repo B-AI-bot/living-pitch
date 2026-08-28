@@ -1,4 +1,5 @@
 import { capture } from './analytics.ts'
+import { wireMutationAffordance } from './colony.ts'
 import { getQuestion, QUESTIONS } from './scan/index.ts'
 import { objections, getIndustryLabel, getSceneCopy, sceneQuestions, stageRender } from './engine/scenes.ts'
 import {
@@ -192,6 +193,7 @@ export function renderSummit(state: PitchState): string {
       ${bookingResult}
     </section>
     <button class="button button-quiet replay-button" data-action="replay">Replay and compare the film</button>
+    <a class="button button-quiet" href="/roast">Roast my site</a>
   </div>`
 }
 
@@ -297,17 +299,19 @@ function streamNarration(root: HTMLElement, animate: boolean): void {
   draw()
 }
 
-function render(root: HTMLElement, state: PitchState): void {
+function render(root: HTMLElement, state: PitchState, roastDomain: string): void {
   const animateNarration = narrationScene !== state.scene
   cancelNarration()
-  root.innerHTML = `${hud(state)}<main class="pitch-shell"><nav class="pitch-nav"><a href="/">AI JUNGLE</a><a href="/evolution">Public ledger ↗</a></nav>${renderScene(state)}<footer class="pitch-footer"><span>Human-directed, AI-executed.</span><a href="/method">Rethink · Build · Operate · Train</a></footer></main><div class="why-popover" hidden>We use your stated context to select copy, proof emphasis, section order, and CTA. The seed is reproducible. Turn tuning off to see a generic skin.</div>${bookingModal(state)}`
+  const roastContext = roastDomain ? `<div class="roast-context"><span class="agent-dot">ROAST CONTEXT</span><p>Goria just read <strong>${escapeHtml(roastDomain)}</strong>. Now let us map the leak behind the joke.</p></div>` : ''
+  root.innerHTML = `${hud(state)}<main class="pitch-shell"><nav class="pitch-nav"><a href="/">AI JUNGLE</a><div><a href="/roast">Roast my site</a> <a href="/evolution">Public ledger ↗</a></div></nav>${roastContext}${renderScene(state)}<footer class="pitch-footer"><span>Human-directed, AI-executed.</span><a href="/roast">Roast my site</a><a href="/method">Rethink · Build · Operate · Train</a><button class="footer-action" data-action="improve">Improve this</button></footer></main><div class="why-popover" hidden>We use your stated context to select copy, proof emphasis, section order, and CTA. The seed is reproducible. Turn tuning off to see a generic skin.</div>${bookingModal(state)}`
+  wireMutationAffordance(root)
   narrationScene = state.scene
   streamNarration(root, animateNarration)
   root.querySelectorAll<HTMLButtonElement>('[data-choice-group]').forEach((button) => button.addEventListener('click', () => {
     const group = button.dataset.choiceGroup as keyof typeof contextChoices
     choices[group] = button.dataset.choiceValue
     capture('pitch_context_choice', { group, value: button.dataset.choiceValue })
-    render(root, getPitchState())
+    render(root, getPitchState(), roastDomain)
   }))
   root.querySelector<HTMLButtonElement>('[data-action="lock-context"]')?.addEventListener('click', () => {
     if (!choices.industry || !choices.size || !choices.style) return
@@ -414,9 +418,10 @@ function buttonState(root: HTMLElement, expanded: boolean): void {
   button?.setAttribute('aria-expanded', String(expanded))
 }
 
-export function renderPitch(root: HTMLElement): () => void {
-  const unsubscribe = subscribe((state) => render(root, state))
-  render(root, getPitchState())
+export function renderPitch(root: HTMLElement, roastDomain = ''): () => void {
+  const renderState = (state: PitchState) => render(root, state, roastDomain)
+  const activeUnsubscribe = subscribe(renderState)
+  renderState(getPitchState())
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && getPitchState().booking.status !== 'idle' && getPitchState().booking.status !== 'booked') cancelBooking()
   }
@@ -425,7 +430,7 @@ export function renderPitch(root: HTMLElement): () => void {
   return () => {
     cancelNarration()
     narrationScene = null
-    unsubscribe()
+    activeUnsubscribe()
     root.removeEventListener('keydown', handleKeyDown)
   }
 }
