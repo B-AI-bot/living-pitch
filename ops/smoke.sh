@@ -18,8 +18,13 @@ if rg -n '—' src README.md; then
   exit 1
 fi
 
-PORT="${SMOKE_PORT:-4173}"
-npm run preview -- --host 127.0.0.1 --port "$PORT" >/tmp/living-pitch-preview.log 2>&1 &
+if [[ -n "${SMOKE_PORT:-}" ]]; then
+  PORT="$SMOKE_PORT"
+else
+  PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
+fi
+node --experimental-strip-types --check src/webmcp.ts
+npx vite preview --host 127.0.0.1 --port "$PORT" --strictPort >/tmp/living-pitch-preview.log 2>&1 &
 PREVIEW_PID=$!
 trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
 
