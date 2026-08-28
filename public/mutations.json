@@ -78,5 +78,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 5,
     "verified": true
+  },
+  {
+    "id": 9,
+    "ts": "2026-08-28T22:23:42Z",
+    "title": "fix: land the complete W2 fix round on main",
+    "detail": "PR #16 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
