@@ -23,3 +23,25 @@ h1 { max-width: 10ch; margin: 0; color: #fffdf6; font-size: clamp(3.5rem, 11vw, 
 .status-line { display: flex; align-items: center; gap: .6rem; margin-top: 5rem; color: #77736a; font-size: .85rem; }
 .pulse { width: .55rem; height: .55rem; border-radius: 50%; background: #c9a86a; box-shadow: 0 0 0 .35rem #c9a86a1c; }
 @media (max-width: 600px) { .shell { width: min(100% - 2rem, 70rem); } .home-page { justify-content: flex-start; padding-top: 7rem; } .status-line { margin-top: 4rem; } }
+
+.evolution-page { padding: 2rem 0 6rem; }
+.top-nav { display: flex; justify-content: space-between; color: #77736a; font-size: .85rem; }
+.top-nav a { color: #f4f1e9; font-weight: 700; text-decoration: none; }
+.evolution-header { max-width: 55rem; padding: 8rem 0 4rem; }
+.evolution-header h1 { max-width: none; font-size: clamp(3.5rem, 10vw, 7rem); }
+.evolution-intro { max-width: 42rem; margin: 2rem 0 0; color: #b7b3a8; font-size: 1.15rem; }
+.counter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 4rem; border: 1px solid #39362f; background: #39362f; }
+.counter-grid div { min-height: 7rem; padding: 1rem; background: #141411; }
+.counter-grid strong { display: block; color: #c9a86a; font-size: 2rem; line-height: 1; }
+.counter-grid span { display: block; margin-top: .65rem; color: #77736a; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+.mutation-list { display: grid; gap: 1rem; max-width: 55rem; }
+.mutation-card { padding: 1.5rem; border: 1px solid #39362f; background: #141411; }
+.mutation-meta, .mutation-receipt { display: flex; flex-wrap: wrap; gap: .5rem 1rem; color: #77736a; font-size: .75rem; }
+.mutation-meta { justify-content: space-between; text-transform: uppercase; letter-spacing: .08em; }
+.mutation-card h2 { margin: 1.5rem 0 .5rem; color: #fffdf6; font-size: clamp(1.4rem, 3vw, 2.1rem); letter-spacing: -.03em; }
+.mutation-card p { margin: 0 0 1.5rem; color: #b7b3a8; }
+.mutation-receipt { padding-top: 1rem; border-top: 1px solid #2d2b26; }
+.verification { color: #c9a86a; }
+.is-verified { color: #9cc59b; }
+.loading, .empty-state, .error-state { color: #77736a; }
+@media (max-width: 600px) { .evolution-header { padding-top: 5rem; } .counter-grid { grid-template-columns: 1fr; } }
