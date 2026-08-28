@@ -26,12 +26,21 @@ npm run build
 DEPLOY_OUTPUT="$(npx wrangler deploy 2>&1 | tee /tmp/living-pitch-deploy.log)"
 DEPLOY_URL="$(printf '%s\n' "$DEPLOY_OUTPUT" | grep -Eo 'https://[^[:space:]]+\.workers\.dev' | head -n 1 || true)"
 
-if [[ -n "${LIVING_PITCH_SMOKE_URL:-}" ]]; then
-  curl --fail --silent --show-error --location "$LIVING_PITCH_SMOKE_URL" >/dev/null
-  echo "smoke ok: $LIVING_PITCH_SMOKE_URL"
-elif [[ -n "$DEPLOY_URL" ]]; then
-  curl --fail --silent --show-error --location "$DEPLOY_URL" >/dev/null
-  echo "smoke ok: $DEPLOY_URL"
+SMOKE_URL="${LIVING_PITCH_SMOKE_URL:-$DEPLOY_URL}"
+if [[ -n "$SMOKE_URL" ]]; then
+  for attempt in 1 2 3; do
+    if curl --fail --silent --show-error --location "$SMOKE_URL" >/dev/null; then
+      echo "smoke ok: $SMOKE_URL (attempt $attempt)"
+      exit 0
+    fi
+    if [[ "$attempt" -lt 3 ]]; then
+      echo "smoke attempt $attempt failed; waiting 5s for workers.dev propagation" >&2
+      sleep 5
+    fi
+  done
+  echo "smoke failed after 3 attempts: $SMOKE_URL" >&2
+  exit 1
 else
-  echo "deploy ok; no workers.dev URL was returned for the post-deploy curl"
+  echo "deploy ok; no workers.dev URL was returned for the post-deploy smoke" >&2
+  exit 1
 fi
