@@ -95,14 +95,14 @@ function choiceButtons(name: keyof typeof contextChoices): string {
 }
 
 function contextPanel(state: PitchState): string {
+  if (state.context?.source === 'replay') {
+    return `<div class="agent-brief"><span class="agent-dot">RE</span><p>Replay profile selected: <strong>${escapeHtml(sizeLabel(state.context.size))} ${escapeHtml(getIndustryLabel(state.context.industry))}</strong>, ${escapeHtml(state.context.style)}.</p></div><button class="button button-primary" data-action="continue">Replay from the pipeline</button>`
+  }
   if (state.context) {
     const intro = state.agentBriefed
       ? '<span class="agent-dot">AI</span><p>Your agent briefed us. Tuned for:'
       : '<p>Skin locked. Tuned for:'
     return `<div class="agent-brief">${intro} <strong>${escapeHtml(sizeLabel(state.context.size))} ${escapeHtml(getIndustryLabel(state.skin.industry))}</strong>, ${escapeHtml(state.context.tone)}.</p></div><button class="button button-primary" data-action="continue">Enter the pipeline</button>`
-  }
-  if (state.context?.source === 'replay') {
-    return `<div class="agent-brief"><span class="agent-dot">RE</span><p>Replay profile selected: <strong>${escapeHtml(state.context.size)} ${escapeHtml(getIndustryLabel(state.context.industry))}</strong>, ${escapeHtml(state.context.style)}.</p></div><button class="button button-primary" data-action="continue">Replay from the pipeline</button>`
   }
   return `
     <div class="context-grid">
