@@ -155,18 +155,26 @@ def notify_new_pr(bot_token: str, pr: dict[str, Any], state: dict[str, Any]) -> 
 
 
 def answer_callback(bot_token: str, callback_id: str, text: str) -> None:
-    telegram_request(bot_token, "answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
+    try:
+        telegram_request(bot_token, "answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
+    except Exception as error:
+        # Telegram can deliver an old callback after the button was already
+        # handled. That is a warning, not a reason to lose the polling cycle.
+        LOG.warning("could not answer callback %s: %s", callback_id, error)
 
 
 def clear_buttons(bot_token: str, query: dict[str, Any]) -> None:
     message = query.get("message") or {}
     if "message_id" not in message:
         return
-    telegram_request(bot_token, "editMessageReplyMarkup", {
-        "chat_id": str((message.get("chat") or {}).get("id", CHAT_ID)),
-        "message_id": message["message_id"],
-        "reply_markup": {"inline_keyboard": []},
-    })
+    try:
+        telegram_request(bot_token, "editMessageReplyMarkup", {
+            "chat_id": str((message.get("chat") or {}).get("id", CHAT_ID)),
+            "message_id": message["message_id"],
+            "reply_markup": {"inline_keyboard": []},
+        })
+    except Exception as error:
+        LOG.warning("could not clear buttons for message %s: %s", message["message_id"], error)
 
 
 def tell(bot_token: str, text: str) -> None:
@@ -182,7 +190,7 @@ def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def append_mutation(pr: dict[str, Any], latency_s: int) -> None:
+def append_mutation(pr: dict[str, Any], latency_s: int) -> int:
     worktree = Path(tempfile.mkdtemp(prefix="living-pitch-ledger-"))
     try:
         run_gh("repo", "view", "--json", "nameWithOwner")
@@ -209,9 +217,51 @@ def append_mutation(pr: dict[str, Any], latency_s: int) -> None:
         ], cwd=worktree, check=True, capture_output=True, text=True)
         subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=worktree, check=True, capture_output=True, text=True)
         LOG.info("recorded mutation %s for PR #%s", next_id, pr["number"])
+        return next_id
     finally:
         subprocess.run(["git", "worktree", "remove", "--force", str(worktree)], cwd=ROOT, check=False, capture_output=True, text=True)
         shutil.rmtree(worktree, ignore_errors=True)
+
+
+def set_mutation_verified(mutation_id: int) -> None:
+    """Mark the already-published receipt verified after the deploy smoke passes."""
+    worktree = Path(tempfile.mkdtemp(prefix="living-pitch-ledger-"))
+    try:
+        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "worktree", "add", "--detach", str(worktree), "origin/main"], cwd=ROOT, check=True, capture_output=True, text=True)
+        mutation_file = worktree / "public/mutations.json"
+        mutations = json.loads(mutation_file.read_text(encoding="utf-8"))
+        matching = next(item for item in mutations if int(item["id"]) == mutation_id)
+        matching["verified"] = True
+        mutation_file.write_text(json.dumps(mutations, indent=2) + "\n", encoding="utf-8")
+        subprocess.run(["git", "add", "public/mutations.json"], cwd=worktree, check=True)
+        subprocess.run([
+            "git", "-c", "user.name=Living Pitch Ledger", "-c", "user.email=ledger@living-pitch.local",
+            "commit", "-m", f"chore(ledger): verify mutation {mutation_id}",
+        ], cwd=worktree, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=worktree, check=True, capture_output=True, text=True)
+        LOG.info("verified mutation %s after deploy smoke", mutation_id)
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(worktree)], cwd=ROOT, check=False, capture_output=True, text=True)
+        shutil.rmtree(worktree, ignore_errors=True)
+
+
+def deploy_and_verify() -> tuple[bool, str]:
+    """Deploy the merged main and run the local regression smoke afterwards."""
+    try:
+        deployed = subprocess.run(
+            [str(ROOT / "ops/deploy.sh")], cwd=ROOT, check=True, capture_output=True, text=True, timeout=180,
+        )
+        smoke = subprocess.run(
+            [str(ROOT / "ops/smoke.sh")], cwd=ROOT, check=True, capture_output=True, text=True, timeout=180,
+        )
+        output = "\n".join(part for part in (deployed.stdout, deployed.stderr, smoke.stdout, smoke.stderr) if part)
+        return True, output[-2000:]
+    except subprocess.TimeoutExpired as error:
+        return False, f"timed out after 180s: {error}"
+    except subprocess.CalledProcessError as error:
+        output = "\n".join(part for part in (error.stdout, error.stderr) if part)
+        return False, output[-2000:] or str(error)
 
 
 def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
@@ -227,8 +277,14 @@ def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
     run_gh("pr", "merge", str(number), "--squash")
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
-    append_mutation(pr, latency)
-    tell(bot_token, f"PR #{number} approved, merged, and recorded in the public changelog. Approval latency: {latency}s.")
+    mutation_id = append_mutation(pr, latency)
+    verified, detail = deploy_and_verify()
+    if verified:
+        set_mutation_verified(mutation_id)
+        tell(bot_token, f"PR #{number} approved, merged, deployed + verified, and recorded in the public changelog. Approval latency: {latency}s.")
+    else:
+        LOG.error("post-merge deploy or smoke failed for PR #%s: %s", number, detail)
+        tell(bot_token, f"PR #{number} merged and recorded, but deploy + verification failed. The receipt remains unverified. Check the ledger logs. Approval latency: {latency}s.")
 
 
 def reject_pr(bot_token: str, number: int) -> None:
