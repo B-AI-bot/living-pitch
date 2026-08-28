@@ -48,5 +48,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 5,
     "verified": true
+  },
+  {
+    "id": 6,
+    "ts": "2026-08-28T18:40:02Z",
+    "title": "guard(ledger): never ship draft PRs",
+    "detail": "PR #10 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 5,
+    "verified": false
   }
 ]
