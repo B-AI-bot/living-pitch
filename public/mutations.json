@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": 1,
+    "ts": "2026-08-28T18:09:59Z",
+    "title": "feat: add the public evolution changelog",
+    "detail": "PR #2 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "Loic",
+    "latency_s": 2780,
+    "verified": false
+  }
+]
