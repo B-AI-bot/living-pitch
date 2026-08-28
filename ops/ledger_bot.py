@@ -294,13 +294,13 @@ def main() -> None:
     LOG.info("living ledger starting for %s", ROOT)
     while True:
         env = read_env(ENV_FILE)
-        bot_token = env.get("LEDGER_BOT_TOKEN", "")
-        if not bot_token:
+        credential = env.get("LEDGER_BOT_TOKEN", "")
+        if not credential:
             LOG.info("waiting for token")
             time.sleep(POLL_SECONDS)
             continue
         try:
-            cycle(bot_token, load_state())
+            cycle(credential, load_state())
         except Exception:
             LOG.exception("ledger cycle failed; will retry")
         time.sleep(POLL_SECONDS)
