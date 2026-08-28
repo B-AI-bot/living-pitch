@@ -108,5 +108,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 6,
     "verified": true
+  },
+  {
+    "id": 12,
+    "ts": "2026-08-28T23:39:01Z",
+    "title": "fix(api): allow the real workers.dev origin, plus www for the cutover",
+    "detail": "PR #20 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
