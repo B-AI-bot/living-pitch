@@ -1,4 +1,5 @@
 import { capture } from './analytics'
+import { firstClientCase } from './engine/copy/case.ts'
 
 type Page = {
   kicker?: string
@@ -61,7 +62,7 @@ const pages: Record<string, Page> = {
   '/cases': {
     kicker: '№ 06 Proof', title: 'Verified numbers, not vibes.',
     intro: 'Every number on this site is real, auditable, and approved by the client it belongs to. What we can tell you at brand level: every client from day one is still a client. Six systems run in production, from pipeline to research to brand. Nothing has shipped without an owner\'s yes.',
-    sections: [{ title: 'THE CASE CARD', body: ['One system. One client. Three months.', '139 qualified meetings · 24% replies · 90 held · 0 messages without approval', 'For scale: cold outreach averages a 3.4% reply rate on cold email (Instantly 2026 benchmark).'] }], cta: 'Read the first case →', ctaHref: '/cases/first-client',
+    sections: [{ title: 'THE CASE CARD', body: [...firstClientCase.card] }], cta: 'Read the first case →', ctaHref: '/cases/first-client',
   },
   '/cases/first-client': {
     kicker: 'Case 01 · Interim management and executive search advisory', title: 'One system. One client. Three months. 139 qualified meetings.',
@@ -70,7 +71,7 @@ const pages: Record<string, Page> = {
       { title: 'THE INSTALL', body: ['A visibility and network engine: SoFI watches the signals, Memo holds the full context on every relationship, Bob drafts every approach in Franck\'s voice. One rule was welded into the system: nothing leaves without Franck\'s yes, tapped in Telegram.'] },
       { title: 'THE NUMBERS · 3 months', body: ['139 qualified meetings booked · 24% reply rate · 90 meetings held · 0 messages without approval', 'For scale: cold outreach averages a 3.4% reply rate across billions of sends (Instantly 2026 benchmark). Franck\'s system replies at 24%.'] },
       { title: 'THE COVENANT IN PRACTICE', body: ['Franck approved every single message before it went out. Ten minutes a day, mostly between meetings. Some he rewrote. Some he killed. The system learned from both. The machine did the work, the man kept the name.'] },
-      { title: 'THE QUOTE', body: ['In the last three months, the agent helped me book more than 90 qualified meetings with executives I would never have had time to reach, and I approved every single message before it went out. It works while I am in meetings.', 'Franck Euvrard, Partner, Asia-Connect Executive Partners · Verified review on Trustpilot'] },
+      { title: 'THE QUOTE', body: [firstClientCase.quote, firstClientCase.attribution] },
     ], cta: CTA, ctaHref: '/assessment',
   },
   '/book': {

@@ -1,10 +1,16 @@
 import type { Industry, ObjectionLog, SceneId, Skin, Tone } from './types.ts'
+import { firstClientCase } from './copy/case.ts'
 
 export type SceneCopy = {
   eyebrow: string
   title: string
   narration: string
   proof: string
+  offerSteps?: readonly string[]
+  caseCard?: readonly string[]
+  quote?: string
+  attribution?: string
+  cta?: { label: string; href: string }
 }
 
 const industryLabels: Record<Industry, string> = {
@@ -43,6 +49,12 @@ function toneCopy(tone: Tone): { eyebrow: string; title: string; narration: stri
     narration: 'Tuesday afternoon. The thread is open, the next step is obvious, and it still waits because your judgment is carrying too much of the system.',
     proof: 'The machine does the work. You keep the name and the final word.',
   }
+}
+
+function speedProof(skin: Skin): string {
+  if (skin.generic || skin.industry === 'other-services') return '#4 the website that adapts to how you read.'
+  if (skin.industry === 'saas-recruiting') return '#1 visibility and #3 VIP radar.'
+  return '#2 process mapper and #5 desk research.'
 }
 
 export function getIndustryLabel(industry: Industry): string {
@@ -90,17 +102,46 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
           proof: 'Who & why: MBA & Engineer. 10 years abroad leading ToT programs up to $25M. The machine did the work. The human kept the name.',
         }
   }
+  if (scene === 'speed') {
+    return {
+      eyebrow: 'TERRITORY 03 · SPEED',
+      title: 'Nestor moves while you are in the room.',
+      narration: 'A fast first response matters because the right moment is short. the same discipline runs on the site you are playing right now.',
+      proof: speedProof(skin),
+      caseCard: firstClientCase.card,
+      quote: firstClientCase.quote,
+      attribution: firstClientCase.attribution,
+    }
+  }
+  if (scene === 'memory-cash') {
+    return {
+      eyebrow: 'TERRITORY 04 · MEMORY & CASH',
+      title: 'The context and the cash are already there.',
+      narration: 'Assessment (credited). First Install $7,500-15,000 fixed. Partnership from $5,000/month plus performance share.',
+      proof: 'Three installable opportunities. Or you pay nothing. the fee comes off your first install',
+      offerSteps: [
+        'Assessment (credited)',
+        'First Install $7,500-15,000 fixed',
+        'Partnership from $5,000/month plus performance share',
+      ],
+    }
+  }
   return {
     eyebrow: 'THE SUMMIT',
     title: 'A number, not a vibe.',
     narration: 'Your Leverage Score is a directional planning result from the answers you gave. We can take the next step only when the work and the success gate are clear.',
     proof: 'Get my 3 installable opportunities. Three, or it is free.',
+    cta: skin.tone === 'evidence-first'
+      ? { label: 'Book the 30-min call', href: '#booking-panel' }
+      : { label: 'Get my 3 installable opportunities →', href: '/assessment' },
   }
 }
 
-export const sceneQuestions: Record<'pipeline' | 'follow-through', string[]> = {
-  pipeline: ['pipeline_visibility', 'actual_response_time'],
+export const sceneQuestions: Record<'pipeline' | 'follow-through' | 'speed' | 'memory-cash', string[]> = {
+  pipeline: ['pipeline_visibility'],
   'follow-through': ['follow_through', 'memory_access'],
+  speed: ['speed_to_lead', 'actual_response_time'],
+  'memory-cash': ['memory_access', 'cash_control'],
 }
 
 export const objections: Array<{ id: string; label: string; answer: string; scenes: SceneId[] }> = [

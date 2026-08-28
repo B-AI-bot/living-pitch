@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "scan:smoke": "node --experimental-strip-types scripts/scan-smoke.ts",
+    "summit:smoke": "node --experimental-strip-types scripts/summit-smoke.ts && node scripts/task-3-smoke.mjs",
     "preview": "vite preview",
     "dev": "vite"
   },
