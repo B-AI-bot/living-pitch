@@ -88,5 +88,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": true
+  },
+  {
+    "id": 10,
+    "ts": "2026-08-28T23:01:34Z",
+    "title": "W3: add receipt-first roast organ and colony mutations",
+    "detail": "PR #17 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 60,
+    "verified": false
   }
 ]
