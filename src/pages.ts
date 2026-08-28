@@ -75,7 +75,7 @@ const pages: Record<string, Page> = {
   },
   '/book': {
     title: 'Thirty minutes. Your real week on the table.', intro: 'No slides, no pitch deck, no let me tell you about our journey. You bring last week\'s calendar. We find the fifteen-hour leak together. If there is a fit, we will tell you exactly what the next step costs.',
-    sections: [{ title: 'HOW THE 30 MINUTES GO', body: ['Minutes 0 to 3: the frame. Diagnostic, not demo.', 'Minutes 3 to 15: the leak. Your last week, hour by hour.', 'Minutes 15 to 22: the math. Hours times people times weeks.', 'Minutes 22 to 30: the verdict. Fit or no fit, said out loud.'] }, { title: 'BRING', body: ['Last week\'s calendar and one task that made you think a machine should be doing this by now.'] }], cta: 'Book my 30-min call', ctaHref: 'https://cal.wtaij.com/loic/intro',
+    sections: [{ title: 'HOW THE 30 MINUTES GO', body: ['Minutes 0 to 3: the frame. Diagnostic, not demo.', 'Minutes 3 to 15: the leak. Your last week, hour by hour.', 'Minutes 15 to 22: the math. Hours times people times weeks.', 'Minutes 22 to 30: the verdict. Fit or no fit, said out loud.'] }, { title: 'BRING', body: ['Last week\'s calendar and one task that made you think a machine should be doing this by now.'] }], cta: 'Book my 30-min call', ctaHref: 'https://cal.welcometotheaijungle.com/loic/intro',
   },
   '/about': {
     kicker: '№ 02 The operator', title: 'Operators first. Builders second.', intro: 'I did not start AI Jungle because AI is exciting. I started it because I was drowning.',
