@@ -118,5 +118,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": false
+  },
+  {
+    "id": 13,
+    "ts": "2026-08-28T23:43:29Z",
+    "title": "feat(worker): cutover passthrough to the legacy site for unknown paths",
+    "detail": "PR #21 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
