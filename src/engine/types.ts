@@ -23,6 +23,7 @@ export type Context = {
 
 export type BookingPrefill = {
   start: string
+  nonce: string
   name: string
   email: string
   notes: string
@@ -38,15 +39,18 @@ export type BookingStatus =
 export type BookingSlots =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ready'; slots: string[] }
+  | { status: 'ready'; slots: BookingSlot[] }
   | { status: 'error'; message: string }
 
 export type ObjectionLog = {
   topic: string
-  detail?: string
+  detail: string | null
   answer: string
+  source: 'human' | 'agent'
   at: string
 }
+
+export type BookingSlot = { start: string; nonce: string }
 
 export type ChoiceLog = {
   choiceId: string
@@ -55,11 +59,13 @@ export type ChoiceLog = {
 }
 
 export type PitchState = {
+  schemaVersion: 2
   scene: SceneId
   skin: Skin
   context: Context | null
   answers: ScorecardAnswers
   score: number | null
+  scoreStatus: 'unavailable' | 'partial' | 'final'
   eurosRecoverable: LeverageResult['eurosRecoverable']
   objectionsRaised: ObjectionLog[]
   beatsCovered: string[]

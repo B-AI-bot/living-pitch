@@ -56,6 +56,13 @@ const clientVolumeOptions: QuestionOption[] = [
   { value: 'clients_31_plus', label: '31 or more new clients', weight: 0, numericRange: { min: 31, max: 60 } },
 ]
 
+const loadedRateOptions: QuestionOption[] = [
+  { value: 'rate_50_99', label: '€50 to €99 per loaded hour', weight: 0, numericRange: { min: 50, max: 99 } },
+  { value: 'rate_100_149', label: '€100 to €149 per loaded hour', weight: 0, numericRange: { min: 100, max: 149 } },
+  { value: 'rate_150_249', label: '€150 to €249 per loaded hour', weight: 0, numericRange: { min: 150, max: 249 } },
+  { value: 'rate_250_plus', label: '€250 or more per loaded hour', weight: 0, numericRange: { min: 250, max: 400 } },
+]
+
 const pipelineOptions: QuestionOption[] = [
   { value: 'pipeline_visible', label: 'We see every live opportunity in one place', weight: 0 },
   { value: 'pipeline_some_gaps', label: 'Some opportunities are tracked inconsistently', weight: 1 },
@@ -117,6 +124,7 @@ export const QUESTIONS: ScanQuestion[] = [
   { id: 'owner_led_confirmation', dimension: 'context', text: 'Are you an owner-led firm that sells a service?', options: ownerLedOptions },
   { id: 'team_size', dimension: 'context', text: 'How many people are on the team today?', options: teamSizeOptions },
   { id: 'client_volume', dimension: 'context', text: 'How many new clients do you typically start in a month?', options: clientVolumeOptions },
+  { id: 'loaded_rate', dimension: 'context', text: 'What is the loaded hourly rate for the people carrying this work?', options: loadedRateOptions },
   { id: 'pipeline_visibility', dimension: 'pipeline', text: 'When a new opportunity appears, how reliably does it make it into your pipeline?', options: pipelineOptions },
   { id: 'follow_through', dimension: 'followThrough', text: 'After someone says yes to the next step, how consistently does the work keep moving?', options: followThroughOptions },
   { id: 'speed_to_lead', dimension: 'speedToLead', text: 'How quickly does a useful first response reach a new enquiry?', options: speedOptions },
@@ -143,4 +151,3 @@ export function getScanQuestions(): ScanQuestion[] {
 export function getDimensionQuestions(dimension: Dimension): ScanQuestion[] {
   return QUESTIONS.filter((question) => question.dimension === dimension)
 }
-

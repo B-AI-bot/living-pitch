@@ -106,7 +106,7 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
     return {
       eyebrow: 'TERRITORY 03 · SPEED',
       title: 'Nestor moves while you are in the room.',
-      narration: 'A fast first response matters because the right moment is short. the same discipline runs on the site you are playing right now.',
+      narration: 'A fast first response matters because the right moment is short. The same discipline runs on the site you are playing right now.',
       proof: speedProof(skin),
       caseCard: firstClientCase.card,
       quote: firstClientCase.quote,
@@ -118,7 +118,7 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
       eyebrow: 'TERRITORY 04 · MEMORY & CASH',
       title: 'The context and the cash are already there.',
       narration: 'Assessment (credited). First Install $7,500-15,000 fixed. Partnership from $5,000/month plus performance share.',
-      proof: 'Three installable opportunities. Or you pay nothing. the fee comes off your first install',
+      proof: 'Three installable opportunities. Or you pay nothing. The fee comes off your first install',
       offerSteps: [
         'Assessment (credited)',
         'First Install $7,500-15,000 fixed',
@@ -131,9 +131,7 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
     title: 'A number, not a vibe.',
     narration: 'Your Leverage Score is a directional planning result from the answers you gave. We can take the next step only when the work and the success gate are clear.',
     proof: 'Get my 3 installable opportunities. Three, or it is free.',
-    cta: skin.tone === 'evidence-first'
-      ? { label: 'Book the 30-min call', href: '#booking-panel' }
-      : { label: 'Get my 3 installable opportunities →', href: '/assessment' },
+    cta: { label: 'Get my 3 installable opportunities →', href: '/assessment' },
   }
 }
 
@@ -141,7 +139,7 @@ export const sceneQuestions: Record<'pipeline' | 'follow-through' | 'speed' | 'm
   pipeline: ['pipeline_visibility'],
   'follow-through': ['follow_through', 'memory_access'],
   speed: ['speed_to_lead', 'actual_response_time'],
-  'memory-cash': ['memory_access', 'cash_control'],
+  'memory-cash': ['memory_access', 'cash_control', 'loaded_rate', 'client_volume'],
 }
 
 export const objections: Array<{ id: string; label: string; answer: string; scenes: SceneId[] }> = [
@@ -200,6 +198,12 @@ export function findObjection(topic: string): (typeof objections)[number] | unde
   return objections.find((item) => item.id === topic || item.label.toLowerCase() === normalized || item.label.toLowerCase().includes(normalized))
 }
 
-export function objectionLog(item: (typeof objections)[number], detail?: string): ObjectionLog {
-  return { topic: item.label, detail, answer: item.answer, at: new Date().toISOString() }
+export function objectionLog(item: (typeof objections)[number], detail: string | null, source: 'human' | 'agent'): ObjectionLog {
+  return { topic: item.label, detail, answer: item.answer, source, at: new Date().toISOString() }
+}
+
+export function stageRender(objection: ObjectionLog): string {
+  return objection.source === 'agent'
+    ? `Your agent asks: ${objection.detail ?? objection.topic}`
+    : `You ask: ${objection.topic}`
 }

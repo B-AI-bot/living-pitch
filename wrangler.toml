@@ -2,6 +2,11 @@ name = "living-pitch"
 main = "src/worker.js"
 compatibility_date = "2026-08-28"
 
+# Development-only signing key for slot nonces. Production uses a Wrangler
+# secret: `wrangler secret put BOOKING_NONCE_SECRET`.
+[vars]
+BOOKING_NONCE_SECRET = "living-pitch-dev-booking-nonce-secret"
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"

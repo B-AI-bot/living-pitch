@@ -12,8 +12,10 @@ const score = scoreSummit(leakyAnswers)
 assert.deepEqual(score, {
   score: 0,
   topLeak: 'pipeline',
-  eurosPerWeek: { low: 384, high: 1232 },
+  eurosPerWeek: { low: 0, high: 0 },
   complete: true,
+  economicInputsComplete: false,
+  estimateFormula: null,
   dimensions: {
     pipeline: 100,
     'follow-through': 100,
@@ -27,6 +29,11 @@ const noAnswerScore = scoreSummit({})
 assert.equal(noAnswerScore.complete, false)
 assert.equal(noAnswerScore.score, 100)
 assert.equal(noAnswerScore.topLeak, null)
+assert.equal(noAnswerScore.economicInputsComplete, false)
+
+const economicScore = scoreSummit({ ...leakyAnswers, loaded_rate: 'rate_100_149' })
+assert.equal(economicScore.economicInputsComplete, true)
+assert.match(economicScore.estimateFormula ?? '', /loaded hourly rate/)
 
 const partialScore = scoreSummit({ pipeline_visibility: 'pipeline_leaky' })
 assert.equal(partialScore.complete, false)
