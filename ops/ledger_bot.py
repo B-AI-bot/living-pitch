@@ -224,7 +224,7 @@ def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
         LOG.warning("refused PR #%s after anti-leak match: %s", number, names)
         return
 
-    run_gh("pr", "merge", str(number), "--squash", "--delete-branch=false")
+    run_gh("pr", "merge", str(number), "--squash")
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
     append_mutation(pr, latency)
