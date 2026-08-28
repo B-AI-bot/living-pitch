@@ -214,7 +214,7 @@ export function offerFacts(topic?: string): Record<string, unknown> {
     control: 'Nothing ships without your yes. Every message, quote, and post waits in one approval ledger in Telegram.',
     proof: '139 qualified meetings in 3 months, 24% reply rate, 90 held, 0 messages without approval.',
     anti_icp: 'Not for firms seeking unsupervised volume spam or AI that replaces their judgment.',
-    next_step: 'Start with the Leverage Assessment or book a 30-minute call at https://cal.wtaij.com/loic/intro.',
+    next_step: 'Start with the Leverage Assessment or book a 30-minute call at https://cal.welcometotheaijungle.com/loic/intro.',
   }
 }
 

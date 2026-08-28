@@ -48,7 +48,7 @@ function sceneIndex(scene: SceneId): number {
 }
 
 function hud(state: PitchState): string {
-  const contextLabel = state.context ? `${state.context.size} ${getIndustryLabel(state.skin.industry)}` : 'your firm'
+  const contextLabel = state.context ? `${sizeLabel(state.context.size)} ${getIndustryLabel(state.skin.industry)}` : 'your firm'
   const toneLabel = state.skin.tone === 'evidence-first' ? 'evidence-first' : 'story-reassurance'
   const score = state.score === null ? 'building' : String(Math.round(state.score))
   const euroLabel = state.eurosRecoverable.high ? `€${formatEuros(state.eurosRecoverable.low)} to €${formatEuros(state.eurosRecoverable.high)}` : 'building'
@@ -65,13 +65,20 @@ function hud(state: PitchState): string {
     </aside>`
 }
 
+function sizeLabel(value: string): string {
+  return contextChoices.size.find(([option]) => option === value)?.[1] ?? value
+}
+
 function choiceButtons(name: keyof typeof contextChoices): string {
   return contextChoices[name].map(([value, label]) => `<button class="choice-button ${choices[name] === value ? 'is-selected' : ''}" data-choice-group="${name}" data-choice-value="${value}">${label}</button>`).join('')
 }
 
 function contextPanel(state: PitchState): string {
-  if (state.agentBriefed && state.context) {
-    return `<div class="agent-brief"><span class="agent-dot">AI</span><p>Your agent briefed us. Tuned for: <strong>${escapeHtml(state.context.size)} ${escapeHtml(getIndustryLabel(state.skin.industry))}</strong>, ${escapeHtml(state.context.tone)}.</p></div><button class="button button-primary" data-action="continue">Enter the pipeline</button>`
+  if (state.context) {
+    const intro = state.agentBriefed
+      ? '<span class="agent-dot">AI</span><p>Your agent briefed us. Tuned for:'
+      : '<p>Skin locked. Tuned for:'
+    return `<div class="agent-brief">${intro} <strong>${escapeHtml(sizeLabel(state.context.size))} ${escapeHtml(getIndustryLabel(state.skin.industry))}</strong>, ${escapeHtml(state.context.tone)}.</p></div><button class="button button-primary" data-action="continue">Enter the pipeline</button>`
   }
   return `
     <div class="context-grid">
@@ -105,7 +112,7 @@ function renderScene(state: PitchState): string {
     ? `<div class="path-choice"><p class="eyebrow">Choose the revenue path</p><div class="path-grid"><button data-path="post"><strong>Post</strong><span>Keep the signal alive.</span></button><button data-path="pitch"><strong>Pitch</strong><span>Open the right conversation.</span></button><button data-path="partner"><strong>Partner</strong><span>Build through the network.</span></button></div></div><button class="button button-primary" data-action="continue">Continue to follow-through</button>`
     : state.scene === 'follow-through'
       ? `<div class="ledger-demo"><p class="eyebrow">THE APPROVAL LEDGER, IN PRACTICE</p><h2>0 messages without approval.</h2><div class="queue" aria-label="Approval queue">${['Message draft', 'Quote draft', 'Post draft'].map((item) => `<button data-queue-item="${item}"><span>${item}</span><b>tap yes</b></button>`).join('')}</div><p class="muted">Every decision is logged, timestamped, and inspectable.</p></div><button class="button button-primary" data-action="continue">Take this to the summit</button>`
-      : `<div class="summit-card"><p class="muted">${copy.proof}</p><a class="button button-primary" href="/assessment" data-action="cta">Get my 3 installable opportunities →</a><a class="button button-quiet" href="https://cal.wtaij.com/loic/intro" data-action="cta">Book my 30-min call</a></div>`
+      : `<div class="summit-card"><p class="muted">${copy.proof}</p><a class="button button-primary" href="/assessment" data-action="cta">Get my 3 installable opportunities →</a><a class="button button-quiet" href="https://cal.welcometotheaijungle.com/loic/intro" data-action="cta">Book my 30-min call</a></div>`
   return `<section class="scene scene-${state.scene.replace('-', '')}"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${questions}${controls}${objectionsPanel(state.scene, state)}</section>`
 }
 
@@ -142,6 +149,7 @@ function render(root: HTMLElement, state: PitchState): void {
   root.querySelector<HTMLButtonElement>('[data-action="lock-context"]')?.addEventListener('click', () => {
     if (!choices.industry || !choices.size || !choices.style) return
     setContext({ industry: choices.industry, size: choices.size, style: choices.style, source: 'human' })
+    advanceScene()
   })
   root.querySelector<HTMLButtonElement>('[data-action="continue"]')?.addEventListener('click', () => advanceScene())
   root.querySelectorAll<HTMLButtonElement>('[data-path]').forEach((button) => button.addEventListener('click', () => choosePath(button.dataset.path ?? '')))
