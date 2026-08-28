@@ -104,9 +104,11 @@ def list_open_prs() -> list[dict[str, Any]]:
         "--limit",
         "100",
         "--json",
-        "number,title,author,url,createdAt",
+        "number,title,author,url,createdAt,isDraft",
     )
-    return json.loads(raw)
+    # Draft PRs are work in progress: the gauntlet loop (factual tests + blind
+    # critique) runs on them first, and only a PR flipped to ready may ship.
+    return [pr for pr in json.loads(raw) if not pr.get("isDraft")]
 
 
 def forbidden_names() -> list[str]:
