@@ -1,11 +1,12 @@
 import { capture } from '../analytics.ts'
-import { calculateLeverageScore, getQuestion, validateScanAnswer } from '../scan/index.ts'
+import { getQuestion, getScanQuestions, validateScanAnswer } from '../scan/index.ts'
 import { findObjection, objectionLog } from './scenes.ts'
 import { generatePreliminaryMap, scoreSummit } from './summit.ts'
 import type { ScorecardAnswers } from '../scan/index.ts'
-import type { BookingPrefill, BookingStatus, Context, Industry, PitchState, SceneId, Skin, Tone } from './types.ts'
+import type { BookingPrefill, BookingSlot, BookingSlots, BookingStatus, Context, Industry, ObjectionLog, PitchState, SceneId, Skin, Tone } from './types.ts'
 
-const STORAGE_KEY = 'living-pitch-state-v1'
+const STORAGE_KEY = 'living-pitch-state-v2'
+const SCHEMA_VERSION = 2 as const
 const listeners = new Set<(state: PitchState) => void>()
 
 function hash(value: string): string {
@@ -36,11 +37,13 @@ function defaultSkin(): Skin {
 
 function initialState(): PitchState {
   return {
+    schemaVersion: SCHEMA_VERSION,
     scene: 'basecamp',
     skin: defaultSkin(),
     context: null,
     answers: {},
     score: null,
+    scoreStatus: 'unavailable',
     eurosRecoverable: { low: 0, high: 0 },
     objectionsRaised: [],
     beatsCovered: [],
@@ -58,31 +61,79 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function storedBookingPrefill(value: unknown): BookingPrefill | null {
   if (!isRecord(value)) return null
-  if (typeof value.start !== 'string' || typeof value.name !== 'string' || typeof value.email !== 'string' || typeof value.notes !== 'string') return null
+  if (typeof value.start !== 'string' || typeof value.nonce !== 'string' || typeof value.name !== 'string' || typeof value.email !== 'string' || typeof value.notes !== 'string') return null
   const start = new Date(value.start)
   if (Number.isNaN(start.getTime()) || start.toISOString() !== value.start) return null
-  return { start: value.start, name: value.name, email: value.email, notes: value.notes }
+  return { start: value.start, nonce: value.nonce, name: value.name, email: value.email, notes: value.notes }
 }
 
-function storedBooking(value: unknown): BookingStatus {
-  if (!isRecord(value) || typeof value.status !== 'string') return { status: 'idle' }
+function storedBooking(value: unknown): BookingStatus | null {
+  if (!isRecord(value) || typeof value.status !== 'string') return null
   if (value.status === 'idle') return { status: 'idle' }
   if (value.status === 'booked') {
-    if (typeof value.start !== 'string') return { status: 'idle' }
+    if (typeof value.start !== 'string') return null
     const start = new Date(value.start)
     return Number.isNaN(start.getTime()) || start.toISOString() !== value.start
-      ? { status: 'idle' }
+      ? null
       : { status: 'booked', start: value.start }
   }
   const prefill = storedBookingPrefill(value.prefill)
-  if (!prefill) return { status: 'idle' }
+  if (!prefill) return null
   if (value.status === 'booking_error' && typeof value.message === 'string') {
     return { status: 'booking_error', prefill, message: value.message }
   }
   if (value.status === 'booking' || value.status === 'awaiting_human_confirmation') {
     return { status: 'awaiting_human_confirmation', prefill }
   }
-  return { status: 'idle' }
+  return null
+}
+
+function storedBookingSlots(value: unknown): BookingSlots | null {
+  if (!isRecord(value) || typeof value.status !== 'string') return null
+  if (value.status === 'idle' || value.status === 'loading') return { status: value.status }
+  if (value.status === 'error' && typeof value.message === 'string') return { status: 'error', message: value.message }
+  if (value.status !== 'ready' || !Array.isArray(value.slots)) return null
+  const slots: BookingSlot[] = []
+  for (const item of value.slots) {
+    if (!isRecord(item) || typeof item.start !== 'string' || typeof item.nonce !== 'string' || !isIsoDate(item.start) || item.nonce.length === 0) return null
+    slots.push({ start: item.start, nonce: item.nonce })
+  }
+  return { status: 'ready', slots }
+}
+
+function isIsoDate(value: string): boolean {
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value
+}
+
+function isSceneId(value: unknown): value is SceneId {
+  return typeof value === 'string' && ['basecamp', 'pipeline', 'follow-through', 'speed', 'memory-cash', 'summit'].includes(value)
+}
+
+function isAnswers(value: unknown): value is PitchState['answers'] {
+  if (!isRecord(value)) return false
+  return Object.entries(value).every(([questionId, answer]) => typeof answer === 'string' && Boolean(getQuestion(questionId)) && validateScanAnswer(questionId, answer))
+}
+
+function isObjectionLog(value: unknown): value is ObjectionLog {
+  return isRecord(value) && typeof value.topic === 'string' && (typeof value.detail === 'string' || value.detail === null)
+    && typeof value.answer === 'string' && (value.source === 'human' || value.source === 'agent') && typeof value.at === 'string'
+}
+
+function isPitchState(value: unknown): value is PitchState {
+  if (!isRecord(value) || value.schemaVersion !== SCHEMA_VERSION || !isSceneId(value.scene) || !isRecord(value.skin)) return false
+  const skin = value.skin
+  if (typeof skin.tone !== 'string' || !['story-reassurance', 'evidence-first'].includes(skin.tone) || typeof skin.industry !== 'string' || !['saas-recruiting', 'wealth-advisory', 'other-services'].includes(skin.industry) || typeof skin.seed !== 'string' || typeof skin.generic !== 'boolean') return false
+  if (value.context !== null && !isRecord(value.context)) return false
+  if (value.context !== null) {
+    const context = value.context
+    if (typeof context.source !== 'string' || !['human', 'agent', 'replay'].includes(context.source) || typeof context.tone !== 'string' || !['story-reassurance', 'evidence-first'].includes(context.tone) || typeof context.industry !== 'string' || !['saas-recruiting', 'wealth-advisory', 'other-services'].includes(context.industry) || typeof context.size !== 'string' || typeof context.role !== 'string' || typeof context.style !== 'string' || !Array.isArray(context.priorities) || !context.priorities.every((item) => typeof item === 'string')) return false
+  }
+  if (!isAnswers(value.answers) || (value.score !== null && typeof value.score !== 'number') || typeof value.scoreStatus !== 'string' || !['unavailable', 'partial', 'final'].includes(value.scoreStatus)) return false
+  if (!isRecord(value.eurosRecoverable) || typeof value.eurosRecoverable.low !== 'number' || typeof value.eurosRecoverable.high !== 'number') return false
+  if (!Array.isArray(value.objectionsRaised) || !value.objectionsRaised.every(isObjectionLog) || !Array.isArray(value.beatsCovered) || !value.beatsCovered.every((item) => typeof item === 'string') || !Array.isArray(value.choicesLog)) return false
+  if (!value.choicesLog.every((item) => isRecord(item) && typeof item.choiceId === 'string' && isSceneId(item.scene) && typeof item.at === 'string')) return false
+  return storedBooking(value.booking) !== null && storedBookingSlots(value.bookingSlots) !== null && typeof value.agentBriefed === 'boolean' && typeof value.genericMode === 'boolean'
 }
 
 let state = loadState()
@@ -92,13 +143,10 @@ function loadState(): PitchState {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
-      if (isRecord(parsed)) {
-        return {
-          ...initialState(),
-          ...parsed,
-          booking: storedBooking(parsed.booking),
-          bookingSlots: { status: 'idle' },
-        }
+      if (isPitchState(parsed)) {
+        const booking = storedBooking(parsed.booking)
+        if (!booking) return initialState()
+        return { ...parsed, booking, bookingSlots: { status: 'idle' } }
       }
     }
   } catch {
@@ -121,13 +169,42 @@ function emit(): void {
 }
 
 function applyScore(): void {
-  const result = calculateLeverageScore(state.answers)
-  state.score = result.complete ? result.score : null
-  state.eurosRecoverable = result.complete ? result.eurosRecoverable : { low: 0, high: 0 }
+  const result = scoreSummit(state.answers)
+  if (state.scene === 'summit') {
+    state.score = result.score
+    state.scoreStatus = result.complete ? 'final' : 'partial'
+  }
+  state.eurosRecoverable = result.economicInputsComplete ? result.eurosPerWeek : { low: 0, high: 0 }
+}
+
+function finalizeScore(): void {
+  const result = scoreSummit(state.answers)
+  state.score = result.score
+  state.scoreStatus = result.complete ? 'final' : 'partial'
+  state.eurosRecoverable = result.economicInputsComplete ? result.eurosPerWeek : { low: 0, high: 0 }
 }
 
 function cover(beat: string): void {
   if (!state.beatsCovered.includes(beat)) state.beatsCovered.push(beat)
+}
+
+function agentQuestion(question: ReturnType<typeof getQuestion>): Record<string, unknown> | null {
+  if (!question) return null
+  return {
+    question_id: question.id,
+    label: question.text,
+    options: question.options.map((option) => ({ value: option.value, label: option.label })),
+  }
+}
+
+function missingScanFields(answers: ScorecardAnswers, context: Context | null): Array<Record<string, unknown>> {
+  const missing: Array<Record<string, unknown>> = []
+  if (!context) missing.push({ id: 'context', label: 'Provide the human\'s firm context with provide_context.' })
+  for (const question of getScanQuestions()) {
+    if (question.dimension === 'style' || !context && question.dimension === 'context') continue
+    if (!answers[question.id]) missing.push(agentQuestion(question) ?? { id: question.id, label: question.text })
+  }
+  return missing
 }
 
 export function getPitchState(): PitchState {
@@ -199,12 +276,12 @@ export function answerScanQuestion(questionId: string, answer: string): PitchSta
   return getPitchState()
 }
 
-export function raiseObjection(topic: string, detail?: string): { state: PitchState; objection: ReturnType<typeof objectionLog> } {
+export function raiseObjection(topic: string, detail: string | null = null, source: 'human' | 'agent' = 'human'): { state: PitchState; objection: ReturnType<typeof objectionLog> } {
   const match = findObjection(topic)
   if (!match) throw new Error('That objection is not in the canned pool. Use one of the objection labels shown on stage, then try again.')
-  const entry = objectionLog(match, detail)
+  const entry = objectionLog(match, detail, source)
   state.objectionsRaised.push(entry)
-  capture('objection_raised', { topic: entry.topic, channel: detail ? 'agent' : 'human' })
+  capture('objection_raised', { topic: entry.topic, channel: source })
   emit()
   return { state: getPitchState(), objection: entry }
 }
@@ -219,6 +296,7 @@ export function advanceScene(): PitchState {
     summit: 'summit',
   }
   cover(state.scene)
+  if (state.scene === 'summit') finalizeScore()
   state.scene = next[state.scene]
   cover(state.scene)
   capture('pitch_scene_advance', { scene: state.scene })
@@ -246,18 +324,37 @@ export function resetPitch(): PitchState {
 }
 
 export function runLeverageScore(answers: ScorecardAnswers = {}) {
-  return scoreSummit({ ...state.answers, ...answers })
+  const mergedAnswers = { ...state.answers, ...answers }
+  state.answers = mergedAnswers
+  const result = scoreSummit(mergedAnswers)
+  const missing = missingScanFields(mergedAnswers, state.context)
+  if (missing.length > 0) {
+    applyScore()
+    emit()
+    return { status: 'missing_fields' as const, missing_fields: missing }
+  }
+  state.score = result.score
+  state.scoreStatus = result.complete ? 'final' : 'partial'
+  state.eurosRecoverable = result.eurosPerWeek
+  state.scene = 'summit'
+  cover('summit')
+  emit()
+  return result
 }
 
 export function generateMap(domain?: string) {
+  const missing = missingScanFields(state.answers, state.context)
+  if (missing.length > 0) return { status: 'missing_fields' as const, missing_fields: missing }
   return generatePreliminaryMap({ context: state.context, answers: state.answers, domain })
 }
 
-export function requestBookingPrefill(input: Omit<BookingPrefill, 'notes'>): BookingStatus {
+export function requestBookingPrefill(input: Omit<BookingPrefill, 'notes' | 'nonce'>): BookingStatus {
   if (state.booking.status === 'booked' && state.booking.start === input.start) return structuredClone(state.booking)
+  const slot = state.bookingSlots.status === 'ready' ? state.bookingSlots.slots.find((item) => item.start === input.start) : undefined
+  if (!slot) throw new Error('That start is not one of the currently offered slots. Call get_pitch_state and use an exact slot.')
   state.booking = {
     status: 'awaiting_human_confirmation',
-    prefill: { ...input, notes: '' },
+    prefill: { ...input, nonce: slot.nonce, notes: '' },
   }
   capture('booking_prefilled', { channel: 'agent', start: input.start })
   emit()
@@ -265,9 +362,11 @@ export function requestBookingPrefill(input: Omit<BookingPrefill, 'notes'>): Boo
 }
 
 export function prefillHumanBooking(start: string): PitchState {
+  const slot = state.bookingSlots.status === 'ready' ? state.bookingSlots.slots.find((item) => item.start === start) : undefined
+  if (!slot) throw new Error('That slot is no longer available. Reload the available slots and try again.')
   state.booking = {
     status: 'awaiting_human_confirmation',
-    prefill: { start, name: '', email: '', notes: '' },
+    prefill: { start, nonce: slot.nonce, name: '', email: '', notes: '' },
   }
   capture('booking_slot_selected', { channel: 'human', start })
   emit()
@@ -290,6 +389,7 @@ export function markBookingSubmitting(): PitchState {
 }
 
 export function markBookingBooked(start: string): PitchState {
+  if (state.booking.status !== 'booking' || state.booking.prefill.start !== start) return getPitchState()
   state.booking = { status: 'booked', start }
   capture('booking_confirmed', { channel: 'human', start })
   emit()
@@ -306,7 +406,7 @@ export function markBookingError(message: string): PitchState {
 
 export function dismissBooking(): PitchState {
   if (state.booking.status === 'booked') return getPitchState()
-  if (state.booking.status === 'awaiting_human_confirmation' || state.booking.status === 'booking_error') {
+  if (state.booking.status === 'awaiting_human_confirmation' || state.booking.status === 'booking_error' || state.booking.status === 'booking') {
     capture('booking_confirmation_no_click', { channel: 'human', start: state.booking.prefill.start })
   }
   state.booking = { status: 'idle' }
@@ -320,7 +420,7 @@ export function setBookingSlotsLoading(): PitchState {
   return getPitchState()
 }
 
-export function setBookingSlots(slots: string[]): PitchState {
+export function setBookingSlots(slots: BookingSlot[]): PitchState {
   state.bookingSlots = { status: 'ready', slots: [...slots] }
   emit()
   return getPitchState()
@@ -365,15 +465,45 @@ export function offerFacts(topic?: string): Record<string, unknown> {
 
 export function stateForAgent(): Record<string, unknown> {
   const result = getPitchState()
+  const scanQuestions = getScanQuestions()
+    .filter((question) => question.dimension !== 'style' && !result.answers[question.id])
+    .map((question) => agentQuestion(question))
+    .filter((question): question is Record<string, unknown> => question !== null)
+  const currentQuestion = result.context
+    ? scanQuestions[0] ?? null
+    : {
+        question_id: 'provide_context',
+        label: 'Ask the human for firm context before answering the scan.',
+        fields: ['industry', 'size', 'role', 'priorities', 'tone'],
+        options: {
+          industry: [
+            { value: 'saas-recruiting', label: 'SaaS / recruiting' },
+            { value: 'wealth-advisory', label: 'Wealth / advisory' },
+            { value: 'other-services', label: 'Other services' },
+          ],
+          size: [
+            { value: 'team_1_4', label: '1 to 4 people' },
+            { value: 'team_5_10', label: '5 to 10 people' },
+            { value: 'team_11_25', label: '11 to 25 people' },
+            { value: 'team_26_50', label: '26 to 50 people' },
+          ],
+          tone: [
+            { value: 'evidence-first', label: 'Evidence first' },
+            { value: 'story-reassurance', label: 'Story and reassurance' },
+          ],
+        },
+      }
   return {
     ...result,
+    currentQuestion,
+    remainingQuestions: scanQuestions,
     availableChoices: result.scene === 'pipeline' ? ['post', 'pitch', 'partner'] : [],
-    next: result.scene === 'summit' ? 'Review the estimate and choose the assessment or 30-minute call.' : 'Ask the human for missing context or use the visible choices, then call get_pitch_state again.',
+    next: result.scene === 'summit' ? 'Review the estimate and choose the assessment or 30-minute call.' : 'Use the exact current question options, then call get_pitch_state again.',
   }
 }
 
 export function getPitchSummary(): Record<string, unknown> {
-  const score = runLeverageScore()
+  const score = scoreSummit(state.answers)
   const leaks = Object.entries(score.dimensions)
     .map(([dimension, severity]) => ({ dimension, severity }))
     .sort((left, right) => right.severity - left.severity)

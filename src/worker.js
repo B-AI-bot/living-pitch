@@ -5,7 +5,9 @@ const PRIMARY_SLOTS_PATH = "/api/trpc/public/slots.getSchedule";
 const FALLBACK_SLOTS_PATH = "/api/trpc/slots/getSchedule";
 const BOOK_PATH = "/api/book/event";
 const HOUR_MS = 60 * 60 * 1000;
+const NONCE_TTL_MS = 10 * 60 * 1000;
 const bookingAttempts = new Map();
+const consumedBookingNonces = new Map();
 
 class BoundaryError extends Error {}
 class UpstreamError extends Error {}
@@ -26,6 +28,61 @@ function jsonResponse(body, status = 200) {
     status,
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+function base64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlBytes(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(normalized);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function hmacKey(secret) {
+  if (typeof secret !== "string" || secret.length < 16) throw new BoundaryError("BOOKING_NONCE_SECRET is not configured.");
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+
+async function signNonce(payload, secret) {
+  const encodedPayload = base64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = await crypto.subtle.sign("HMAC", await hmacKey(secret), new TextEncoder().encode(encodedPayload));
+  return `${encodedPayload}.${base64Url(new Uint8Array(signature))}`;
+}
+
+async function issueBookingNonce(start, secret, now) {
+  const random = new Uint8Array(16);
+  crypto.getRandomValues(random);
+  return signNonce({ start, expiresAt: now.getTime() + NONCE_TTL_MS, id: base64Url(random) }, secret);
+}
+
+function cleanupConsumedNonces(now) {
+  for (const [nonce, expiresAt] of consumedBookingNonces) {
+    if (expiresAt <= now.getTime()) consumedBookingNonces.delete(nonce);
+  }
+}
+
+async function consumeBookingNonce(nonce, start, secret, now) {
+  cleanupConsumedNonces(now);
+  if (consumedBookingNonces.has(nonce)) throw new BoundaryError("This booking nonce has already been used.");
+  const parts = typeof nonce === "string" ? nonce.split(".") : [];
+  if (parts.length !== 2) throw new BoundaryError("A valid booking nonce from /slots is required.");
+  let payload;
+  let signature;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(base64UrlBytes(parts[0])));
+    signature = base64UrlBytes(parts[1]);
+  } catch {
+    throw new BoundaryError("A valid booking nonce from /slots is required.");
+  }
+  const validSignature = await crypto.subtle.verify("HMAC", await hmacKey(secret), signature, new TextEncoder().encode(parts[0]));
+  if (!validSignature || !isRecord(payload) || payload.start !== start || typeof payload.expiresAt !== "number" || payload.expiresAt <= now.getTime() || typeof payload.id !== "string") {
+    throw new BoundaryError("This booking nonce is invalid or expired.");
+  }
+  consumedBookingNonces.set(nonce, payload.expiresAt);
 }
 
 function slotsInput(now, days) {
@@ -112,8 +169,9 @@ async function availableSlots(runtime, now, days) {
 
 function parseBookingInput(value) {
   if (!isRecord(value)) throw new BoundaryError("Booking details must be a JSON object.");
-  const { start, name, email, notes } = value;
+  const { start, nonce, name, email, notes } = value;
   if (!isIsoDate(start)) throw new BoundaryError("start must be an ISO timestamp.");
+  if (typeof nonce !== "string" || nonce.length === 0) throw new BoundaryError("nonce is required. Use one returned by /api/cal/slots.");
   if (typeof name !== "string" || name.trim().length === 0 || name.length > 160) {
     throw new BoundaryError("name is required and must be 160 characters or fewer.");
   }
@@ -123,7 +181,7 @@ function parseBookingInput(value) {
   if (typeof notes !== "string" || notes.length > 2000) {
     throw new BoundaryError("notes must be a string of 2000 characters or fewer.");
   }
-  return { start, name: name.trim(), email: email.trim(), notes: notes.trim() };
+  return { start, nonce, name: name.trim(), email: email.trim(), notes: notes.trim() };
 }
 
 export function buildBookingPayload(input) {
@@ -172,7 +230,13 @@ export function parseCalBooking(payload) {
 function enforceBookingRateLimit(request, now) {
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   const cutoff = now.getTime() - HOUR_MS;
+  for (const [key, timestamps] of bookingAttempts) {
+    const active = timestamps.filter((timestamp) => timestamp > cutoff);
+    if (active.length === 0) bookingAttempts.delete(key);
+    else bookingAttempts.set(key, active);
+  }
   const recent = (bookingAttempts.get(ip) ?? []).filter((timestamp) => timestamp > cutoff);
+  if (recent.length === 0) bookingAttempts.delete(ip);
   if (recent.length >= 3) throw new RateLimitError("Booking limit reached. Try again in one hour.");
   recent.push(now.getTime());
   bookingAttempts.set(ip, recent);
@@ -189,6 +253,11 @@ async function parseRequestJson(request) {
 async function bookAssessment(request, runtime, now) {
   const input = parseBookingInput(await parseRequestJson(request));
   enforceBookingRateLimit(request, now);
+  const currentSlots = await availableSlots(runtime, now, 7);
+  if (!currentSlots.slots.some((slot) => slot.start === input.start)) {
+    throw new BoundaryError("That slot is no longer available. Choose a fresh slot from /api/cal/slots.");
+  }
+  await consumeBookingNonce(input.nonce, input.start, runtime.bookingNonceSecret, now);
   const upstream = await runtime.fetch(`${CAL_ORIGIN}${BOOK_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -207,7 +276,13 @@ export async function handleCalRequest(request, runtime = {
   const url = new URL(request.url);
   try {
     if (url.pathname === "/api/cal/slots" && request.method === "GET") {
-      return jsonResponse(await availableSlots(runtime, runtime.now(), parseDays(url)));
+      const now = runtime.now();
+      const result = await availableSlots(runtime, now, parseDays(url));
+      const slots = await Promise.all(result.slots.map(async (slot) => ({
+        start: slot.start,
+        nonce: await issueBookingNonce(slot.start, runtime.bookingNonceSecret, now),
+      })));
+      return jsonResponse({ slots });
     }
     if (url.pathname === "/api/cal/book" && request.method === "POST") {
       return jsonResponse(await bookAssessment(request, runtime, runtime.now()));
@@ -224,7 +299,11 @@ export async function handleCalRequest(request, runtime = {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/cal/")) return handleCalRequest(request);
+    if (url.pathname.startsWith("/api/cal/")) return handleCalRequest(request, {
+      fetch: (input, init) => fetch(input, init),
+      now: () => new Date(),
+      bookingNonceSecret: env.BOOKING_NONCE_SECRET,
+    });
 
     // The ledger changes with every mutation. Routing through the worker avoids
     // Cloudflare serving an old static response from cache.

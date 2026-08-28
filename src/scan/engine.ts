@@ -10,43 +10,7 @@ export const DIMENSION_WEIGHTS: Readonly<Record<Dimension, number>> = {
   cash: 0.16,
 }
 
-export const HOURLY_RATE_EUR: Readonly<Record<string, number>> = {
-  consulting: 140,
-  'exec-search': 160,
-  'ma-corporate-advisory': 190,
-  agency: 110,
-  'other-services': 100,
-  'product-ecommerce-other': 100,
-}
-
-export const MINUTES_PER_CLIENT: Readonly<Record<Dimension, number>> = {
-  pipeline: 18,
-  followThrough: 28,
-  speedToLead: 14,
-  memory: 16,
-  cash: 20,
-}
-
 export const WEEKS_PER_MONTH = 4.33
-export const RECOVERY_PERCENT = { low: 35, high: 60 } as const
-
-const TEAM_MULTIPLIER: Readonly<Record<string, number>> = {
-  team_1_4: 0.8,
-  team_5_10: 1,
-  team_11_25: 1.1,
-  team_26_50: 1.2,
-  team_51_200: 1.3,
-  team_201_plus: 1.4,
-}
-
-const FIRM_MULTIPLIER: Readonly<Record<string, number>> = {
-  consulting: 1,
-  'exec-search': 1.05,
-  'ma-corporate-advisory': 1.15,
-  agency: 0.9,
-  'other-services': 0.85,
-  'product-ecommerce-other': 0.85,
-}
 
 export type RecoverableRange = { low: number; high: number }
 
@@ -57,6 +21,8 @@ export type LeverageResult = {
   eurosRecoverable: RecoverableRange
   answersUsed: number
   complete: boolean
+  economicInputsComplete: boolean
+  estimateFormula: string | null
 }
 
 function round(value: number): number {
@@ -79,41 +45,26 @@ function dimensionScore(answers: ScorecardAnswers, dimension: Dimension): number
   return round(selectedScores.reduce((total, value) => total + value, 0) / selectedScores.length)
 }
 
-function volumeRange(answers: ScorecardAnswers): { min: number; max: number } {
-  const option = optionFor('client_volume', answers)
-  return option?.numericRange ?? { min: 6, max: 15 }
+function numericRange(answers: ScorecardAnswers, questionId: string): { min: number; max: number } | null {
+  return optionFor(questionId, answers)?.numericRange ?? null
 }
 
-function leakRatio(answers: ScorecardAnswers, dimension: Dimension): number {
-  const selected = getDimensionQuestions(dimension).flatMap((question) => {
-    const answer = optionFor(question.id, answers)
-    return answer ? [answer.weight / 4] : []
-  })
-  if (selected.length === 0) return 0
-  return selected.reduce((total, value) => total + value, 0) / selected.length
+function volumeRange(answers: ScorecardAnswers): { min: number; max: number } | null {
+  const option = optionFor('client_volume', answers)
+  return option?.numericRange ?? null
 }
 
 function calculateEuros(answers: ScorecardAnswers): RecoverableRange {
-  const firmType = answers.firm_type ?? 'other-services'
-  const teamMultiplier = TEAM_MULTIPLIER[answers.team_size ?? 'team_5_10'] ?? 1
-  const firmMultiplier = FIRM_MULTIPLIER[firmType] ?? FIRM_MULTIPLIER['other-services']
+  const loadedRate = numericRange(answers, 'loaded_rate')
   const volume = volumeRange(answers)
-  const modeledMinutes = DIMENSIONS.reduce(
-    (total, dimension) => {
-      const ratio = leakRatio(answers, dimension)
-      return {
-        low: total.low + MINUTES_PER_CLIENT[dimension] * volume.min * ratio * teamMultiplier * firmMultiplier,
-        high: total.high + MINUTES_PER_CLIENT[dimension] * volume.max * ratio * teamMultiplier * firmMultiplier,
-      }
-    },
-    { low: 0, high: 0 },
+  if (!loadedRate || !volume) return { low: 0, high: 0 }
+  const leakSeverity = DIMENSIONS.reduce(
+    (total, dimension) => total + (dimensionScore(answers, dimension) / 100) * DIMENSION_WEIGHTS[dimension],
+    0,
   )
-  const hoursLow = round((modeledMinutes.low * (RECOVERY_PERCENT.low / 100)) / 60 / WEEKS_PER_MONTH)
-  const hoursHigh = round((modeledMinutes.high * (RECOVERY_PERCENT.high / 100)) / 60 / WEEKS_PER_MONTH)
-  const hourlyRate = HOURLY_RATE_EUR[firmType] ?? HOURLY_RATE_EUR['other-services']
   return {
-    low: round(hoursLow * WEEKS_PER_MONTH * hourlyRate),
-    high: round(Math.max(hoursLow, hoursHigh) * WEEKS_PER_MONTH * hourlyRate),
+    low: round((loadedRate.min * volume.min * leakSeverity) / WEEKS_PER_MONTH),
+    high: round((loadedRate.max * volume.max * leakSeverity) / WEEKS_PER_MONTH),
   }
 }
 
@@ -131,14 +82,20 @@ export function calculateLeverageScore(answers: ScorecardAnswers): LeverageResul
     null,
   )
   const answersUsed = Object.keys(answers).filter((id) => Boolean(getQuestion(id))).length
+  const complete = QUESTIONS.filter((question) => question.dimension !== 'context' && question.dimension !== 'style')
+    .every((question) => Boolean(optionFor(question.id, answers)))
+  const economicInputsComplete = Boolean(numericRange(answers, 'loaded_rate') && volumeRange(answers))
   return {
     score: round(100 - leakSeverity),
     dimensionScores,
     topTerritory,
     eurosRecoverable: calculateEuros(answers),
     answersUsed,
-    complete: QUESTIONS.filter((question) => question.dimension !== 'context' && question.dimension !== 'style')
-      .every((question) => Boolean(optionFor(question.id, answers))),
+    complete,
+    economicInputsComplete,
+    estimateFormula: economicInputsComplete
+      ? 'weekly estimate = loaded hourly rate × new clients per month × weighted leak severity ÷ weeks per month'
+      : null,
   }
 }
 
