@@ -28,5 +28,15 @@
     "approved_by": "Loic",
     "latency_s": 49,
     "verified": false
+  },
+  {
+    "id": 4,
+    "ts": "2026-08-28T18:36:13Z",
+    "title": "fix(ledger): dynamic mutations.json serving + traced night mandate",
+    "detail": "PR #8 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 0,
+    "verified": false
   }
 ]
