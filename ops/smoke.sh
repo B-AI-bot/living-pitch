@@ -24,6 +24,8 @@ else
   PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
 fi
 node --experimental-strip-types --check src/webmcp.ts
+npm run scan:smoke
+node --experimental-strip-types --input-type=module -e "import('./src/webmcp.ts').then(async ({tools, installWebMcpTools}) => { if (tools.length < 6) throw new Error('WebMCP tool registration is incomplete'); if (await installWebMcpTools()) throw new Error('cold start without agent should degrade cleanly'); console.log('webmcp cold-start smoke ok') })"
 npx vite preview --host 127.0.0.1 --port "$PORT" --strictPort >/tmp/living-pitch-preview.log 2>&1 &
 PREVIEW_PID=$!
 trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
@@ -37,4 +39,15 @@ done
 
 grep -q 'The Living Pitch' /tmp/living-pitch-evolution.html
 grep -q 'mutations.json' dist/assets/*.js
+for route in / /pricing /assessment /method /agents /cases /cases/first-client /book /about /agency /ai /does-not-exist; do
+  curl --silent --fail "http://127.0.0.1:$PORT$route" >/tmp/living-pitch-route.html
+  grep -q '<div id="app"></div>' /tmp/living-pitch-route.html
+done
+curl --silent --fail "http://127.0.0.1:$PORT/llms.txt" >/tmp/living-pitch-llms.txt
+grep -q 'Human-directed, AI-executed.' /tmp/living-pitch-llms.txt
+for tool in provide_context choose_path answer_scan_question raise_objection get_offer_facts get_pitch_state; do
+  grep -q "name: '$tool'" src/webmcp.ts
+done
+grep -q 'navigator.modelContext' src/webmcp.ts
+grep -q 'Watch it change.' src/evolution.ts
 echo 'smoke ok'
