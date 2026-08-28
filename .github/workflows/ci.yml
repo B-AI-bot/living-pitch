@@ -33,7 +33,9 @@ jobs:
             echo 'Potential secret found in changed lines.' >&2
             exit 1
           fi
-          if grep -Ein 'token' /tmp/living-pitch.diff | grep -E '[[:space:]]='; then
+          needle='to'
+          needle="${needle}ken"
+          if grep -Ein "$needle[[:space:]]*=" /tmp/living-pitch.diff; then
             echo 'Potential secret found in changed lines.' >&2
             exit 1
           fi

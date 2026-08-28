@@ -50,10 +50,10 @@ def read_env(path: Path) -> dict[str, str]:
     return values
 
 
-def telegram_request(token: str, method: str, payload: dict[str, Any]) -> dict[str, Any]:
+def telegram_request(bot_token: str, method: str, payload: dict[str, Any]) -> dict[str, Any]:
     body = json.dumps(payload).encode("utf-8")
     request = Request(
-        f"https://api.telegram.org/bot{token}/{method}",
+        f"https://api.telegram.org/bot{bot_token}/{method}",
         data=body,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -134,7 +134,7 @@ def approval_keyboard(pr_number: int) -> dict[str, Any]:
     }
 
 
-def notify_new_pr(token: str, pr: dict[str, Any], state: dict[str, Any]) -> None:
+def notify_new_pr(bot_token: str, pr: dict[str, Any], state: dict[str, Any]) -> None:
     number = str(pr["number"])
     text = (
         f"Living Pitch PR #{number}\n"
@@ -143,7 +143,7 @@ def notify_new_pr(token: str, pr: dict[str, Any], state: dict[str, Any]) -> None
         f"{pr['url']}\n\n"
         "Nothing ships without a human yes. Review the diff before choosing."
     )
-    telegram_request(token, "sendMessage", {
+    telegram_request(bot_token, "sendMessage", {
         "chat_id": CHAT_ID,
         "text": text,
         "reply_markup": approval_keyboard(int(number)),
@@ -154,23 +154,23 @@ def notify_new_pr(token: str, pr: dict[str, Any], state: dict[str, Any]) -> None
     LOG.info("notified Telegram about PR #%s", number)
 
 
-def answer_callback(token: str, callback_id: str, text: str) -> None:
-    telegram_request(token, "answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
+def answer_callback(bot_token: str, callback_id: str, text: str) -> None:
+    telegram_request(bot_token, "answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
 
 
-def clear_buttons(token: str, query: dict[str, Any]) -> None:
+def clear_buttons(bot_token: str, query: dict[str, Any]) -> None:
     message = query.get("message") or {}
     if "message_id" not in message:
         return
-    telegram_request(token, "editMessageReplyMarkup", {
+    telegram_request(bot_token, "editMessageReplyMarkup", {
         "chat_id": str((message.get("chat") or {}).get("id", CHAT_ID)),
         "message_id": message["message_id"],
         "reply_markup": {"inline_keyboard": []},
     })
 
 
-def tell(token: str, text: str) -> None:
-    telegram_request(token, "sendMessage", {"chat_id": CHAT_ID, "text": text})
+def tell(bot_token: str, text: str) -> None:
+    telegram_request(bot_token, "sendMessage", {"chat_id": CHAT_ID, "text": text})
 
 
 def close_pr(number: int, comment: str) -> None:
@@ -214,13 +214,13 @@ def append_mutation(pr: dict[str, Any], latency_s: int) -> None:
         shutil.rmtree(worktree, ignore_errors=True)
 
 
-def approve_pr(token: str, number: int, state: dict[str, Any]) -> None:
+def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
     pr = json.loads(run_gh("pr", "view", str(number), "--json", "number,title,author,url,createdAt"))
     leaks = diff_leaks(number)
     if leaks:
         names = ", ".join(sorted(leaks))
         close_pr(number, "Thanks for the contribution. We cannot accept this PR because its diff contains unpublished material. Please remove it and open a new PR.")
-        tell(token, f"PR #{number} refused by the safety check. Matched unpublished material: {names}")
+        tell(bot_token, f"PR #{number} refused by the safety check. Matched unpublished material: {names}")
         LOG.warning("refused PR #%s after anti-leak match: %s", number, names)
         return
 
@@ -228,49 +228,49 @@ def approve_pr(token: str, number: int, state: dict[str, Any]) -> None:
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
     append_mutation(pr, latency)
-    tell(token, f"PR #{number} approved, merged, and recorded in the public changelog. Approval latency: {latency}s.")
+    tell(bot_token, f"PR #{number} approved, merged, and recorded in the public changelog. Approval latency: {latency}s.")
 
 
-def reject_pr(token: str, number: int) -> None:
+def reject_pr(bot_token: str, number: int) -> None:
     close_pr(number, "Thanks for the contribution. This PR is not ready for the living pitch yet. Please open a follow-up when you have a revised proposal.")
-    tell(token, f"PR #{number} rejected and closed politely. Nothing shipped.")
+    tell(bot_token, f"PR #{number} rejected and closed politely. Nothing shipped.")
 
 
-def process_callback(token: str, query: dict[str, Any], state: dict[str, Any]) -> None:
+def process_callback(bot_token: str, query: dict[str, Any], state: dict[str, Any]) -> None:
     message = query.get("message") or {}
     chat = str((message.get("chat") or {}).get("id", ""))
     callback_id = str(query.get("id", ""))
     if chat != CHAT_ID:
         if callback_id:
-            answer_callback(token, callback_id, "This ledger is controlled by the owner.")
+            answer_callback(bot_token, callback_id, "This ledger is controlled by the owner.")
         return
 
     data = str(query.get("data", ""))
     action, separator, number_text = data.partition(":")
     if not separator or action not in {"approve", "reject"} or not number_text.isdigit():
         if callback_id:
-            answer_callback(token, callback_id, "Unknown ledger action.")
+            answer_callback(bot_token, callback_id, "Unknown ledger action.")
         return
     number = int(number_text)
     key = f"{action}:{number}"
     if key in state["handled"]:
         if callback_id:
-            answer_callback(token, callback_id, "Already handled.")
+            answer_callback(bot_token, callback_id, "Already handled.")
         return
 
     if callback_id:
-        answer_callback(token, callback_id, "Checking the ledger…")
+        answer_callback(bot_token, callback_id, "Checking the ledger…")
     if action == "approve":
-        approve_pr(token, number, state)
+        approve_pr(bot_token, number, state)
     else:
-        reject_pr(token, number)
+        reject_pr(bot_token, number)
     state["handled"].append(key)
     save_state(state)
-    clear_buttons(token, query)
+    clear_buttons(bot_token, query)
 
 
-def poll_updates(token: str, state: dict[str, Any]) -> None:
-    result = telegram_request(token, "getUpdates", {
+def poll_updates(bot_token: str, state: dict[str, Any]) -> None:
+    result = telegram_request(bot_token, "getUpdates", {
         "offset": int(state.get("telegram_offset", 0)),
         "timeout": TELEGRAM_TIMEOUT,
         "allowed_updates": ["callback_query"],
@@ -279,28 +279,28 @@ def poll_updates(token: str, state: dict[str, Any]) -> None:
         state["telegram_offset"] = int(update["update_id"]) + 1
         query = update.get("callback_query")
         if query:
-            process_callback(token, query, state)
+            process_callback(bot_token, query, state)
         save_state(state)
 
 
-def cycle(token: str, state: dict[str, Any]) -> None:
+def cycle(bot_token: str, state: dict[str, Any]) -> None:
     for pr in list_open_prs():
         if str(pr["number"]) not in state["notified"]:
-            notify_new_pr(token, pr, state)
-    poll_updates(token, state)
+            notify_new_pr(bot_token, pr, state)
+    poll_updates(bot_token, state)
 
 
 def main() -> None:
     LOG.info("living ledger starting for %s", ROOT)
     while True:
         env = read_env(ENV_FILE)
-        token = env.get("LEDGER_BOT_TOKEN", "")
-        if not token:
+        bot_token = env.get("LEDGER_BOT_TOKEN", "")
+        if not bot_token:
             LOG.info("waiting for token")
             time.sleep(POLL_SECONDS)
             continue
         try:
-            cycle(token, load_state())
+            cycle(bot_token, load_state())
         except Exception:
             LOG.exception("ledger cycle failed; will retry")
         time.sleep(POLL_SECONDS)
