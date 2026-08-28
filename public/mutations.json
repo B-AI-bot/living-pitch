@@ -98,5 +98,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 60,
     "verified": true
+  },
+  {
+    "id": 11,
+    "ts": "2026-08-28T23:35:49Z",
+    "title": "W4: add flagged Resident triad bridge",
+    "detail": "PR #19 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 6,
+    "verified": false
   }
 ]
