@@ -1,0 +1,14 @@
+[Unit]
+Description=Living Pitch roast and colony API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/living-pitch
+EnvironmentFile=-%h/.living-pitch.env
+ExecStart=/usr/bin/python3 %h/projects/living-pitch/ops/api/server.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

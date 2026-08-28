@@ -1,4 +1,6 @@
 import { capture } from './analytics.ts'
+import { proposeMutation, stageAgentMutation, type MutationType } from './colony.ts'
+import { requestRoast, stageAgentRoast, type RoastIntensity } from './roast.ts'
 import { getQuestion, validateScanAnswer, type ScorecardAnswers } from './scan/index.ts'
 import { stageRender } from './engine/scenes.ts'
 import {
@@ -66,6 +68,14 @@ function readAnswers(value: unknown): ScorecardAnswers {
 function isIsoDate(value: string): boolean {
   const parsed = new Date(value)
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value
+}
+
+function isRoastIntensity(value: unknown): value is RoastIntensity {
+  return value === 'gentle' || value === 'honest' || value === 'scorched'
+}
+
+function isMutationType(value: unknown): value is MutationType {
+  return value === 'copy' || value === 'objection' || value === 'burn' || value === 'bug' || value === 'idea'
 }
 
 function errorResult(tool: string, error: unknown): Record<string, unknown> {
@@ -223,6 +233,37 @@ export const tools: ToolDefinition[] = [
     description: 'Return the structured pitch memo with score, leaks, answers, objections and approved answers, offer, next step, bookable slot, and current booking status.',
     inputSchema: noInputSchema,
     execute: () => timedCall('get_pitch_summary', () => getPitchSummary()),
+  },
+  {
+    name: 'roast_my_site',
+    description: 'Ask Goria to roast the human site with exact observed receipts. This reads the supplied public domain only, never invents evidence, and stages the result for the human.',
+    inputSchema: {
+      type: 'object', additionalProperties: false, required: ['domain', 'intensity'],
+      properties: { domain: { type: 'string' }, intensity: { type: 'string', enum: ['gentle', 'honest', 'scorched'] } },
+    },
+    execute: (input) => timedCall('roast_my_site', async () => {
+      const value = readObject(input, 'domain and intensity are required.')
+      if (typeof value.domain !== 'string' || !isRoastIntensity(value.intensity)) throw new Error('domain must be a string and intensity must be gentle, honest, or scorched.')
+      const result = await requestRoast({ domain: value.domain.trim(), intensity: value.intensity })
+      stageAgentRoast(result)
+      return { ...result, rendered_for_human: 'Your agent asked for a roast of your own site. Brave.' }
+    }),
+  },
+  {
+    name: 'propose_mutation',
+    description: 'Submit a community improvement as data for human review. Nothing ships automatically. Use type copy, objection, burn, bug, or idea.',
+    inputSchema: {
+      type: 'object', additionalProperties: false, required: ['type', 'content', 'rationale'],
+      properties: { type: { type: 'string', enum: ['copy', 'objection', 'burn', 'bug', 'idea'] }, content: { type: 'string' }, rationale: { type: 'string' }, handle: { type: 'string' } },
+    },
+    execute: (input) => timedCall('propose_mutation', async () => {
+      const value = readObject(input, 'type, content, and rationale are required.')
+      if (!isMutationType(value.type) || typeof value.content !== 'string' || typeof value.rationale !== 'string' || !value.content.trim() || !value.rationale.trim()) throw new Error('type, content, and rationale must be valid non-empty values.')
+      if (value.handle !== undefined && typeof value.handle !== 'string') throw new Error('handle must be a string when supplied.')
+      const result = await proposeMutation({ type: value.type, content: value.content.trim(), rationale: value.rationale.trim(), handle: typeof value.handle === 'string' ? value.handle.trim() : undefined })
+      stageAgentMutation(result)
+      return { ...result, rendered_for_human: 'Your agent proposed an improvement. It is waiting in the human approval ledger.' }
+    }),
   },
 ]
 

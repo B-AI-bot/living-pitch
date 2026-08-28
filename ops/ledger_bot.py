@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -119,7 +120,7 @@ def forbidden_names() -> list[str]:
 
 def diff_leaks(pr_number: int) -> list[str]:
     diff = run_gh("pr", "diff", str(pr_number), "--patch").lower()
-    return [name for name in forbidden_names() if name in diff]
+    return [name for name in forbidden_names() if re.search(rf"\b{re.escape(name)}\b", diff, re.IGNORECASE)]
 
 
 def author_name(pr: dict[str, Any]) -> str:
