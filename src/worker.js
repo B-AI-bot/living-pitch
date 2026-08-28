@@ -139,6 +139,7 @@ export function buildBookingPayload(input) {
       name: input.name,
       email: input.email,
       notes: input.notes,
+      topic: "Leverage Assessment",
       location: { value: "integrations:google:meet", optionValue: "" },
     },
   };

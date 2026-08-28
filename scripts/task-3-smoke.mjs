@@ -117,6 +117,7 @@ assert.deepEqual(worker.buildBookingPayload({
     name: 'Ada Lovelace',
     email: 'ada@example.com',
     notes: 'Bring last week\'s calendar.',
+    topic: 'Leverage Assessment',
     location: { value: 'integrations:google:meet', optionValue: '' },
   },
 })
@@ -136,11 +137,14 @@ const ambiguousBooking = await worker.handleCalRequest(
 assert.equal(ambiguousBooking.status, 502)
 assert.match((await ambiguousBooking.json()).error, /invalid booking response/i)
 
+const liveSuccessResponse = { id: 42, uid: 'booking-uid-42' }
+assert.doesNotThrow(() => worker.parseCalBooking(liveSuccessResponse))
+
 const clearBooking = await worker.handleCalRequest(
   bookingRequest('198.51.100.21'),
   {
     now: () => fixedNow,
-    fetch: async () => Response.json({ id: 42, uid: 'booking-uid-42' }),
+    fetch: async () => Response.json(liveSuccessResponse),
   },
 )
 assert.equal(clearBooking.status, 200)
