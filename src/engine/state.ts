@@ -92,7 +92,14 @@ function loadState(): PitchState {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
-      if (isRecord(parsed)) return { ...initialState(), ...parsed, booking: storedBooking(parsed.booking) }
+      if (isRecord(parsed)) {
+        return {
+          ...initialState(),
+          ...parsed,
+          booking: storedBooking(parsed.booking),
+          bookingSlots: { status: 'idle' },
+        }
+      }
     }
   } catch {
     // Embedded browsers and private windows can reject session storage.
@@ -115,12 +122,8 @@ function emit(): void {
 
 function applyScore(): void {
   const result = calculateLeverageScore(state.answers)
-  const territoryAnswers = Object.keys(state.answers).filter((id) => {
-    const question = getQuestion(id)
-    return question && question.dimension !== 'context' && question.dimension !== 'style'
-  })
-  state.score = territoryAnswers.length === 0 ? null : result.score
-  state.eurosRecoverable = result.eurosRecoverable
+  state.score = result.complete ? result.score : null
+  state.eurosRecoverable = result.complete ? result.eurosRecoverable : { low: 0, high: 0 }
 }
 
 function cover(beat: string): void {

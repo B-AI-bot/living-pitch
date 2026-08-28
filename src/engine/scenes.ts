@@ -10,6 +10,7 @@ export type SceneCopy = {
   caseCard?: readonly string[]
   quote?: string
   attribution?: string
+  cta?: { label: string; href: string }
 }
 
 const industryLabels: Record<Industry, string> = {
@@ -130,6 +131,9 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
     title: 'A number, not a vibe.',
     narration: 'Your Leverage Score is a directional planning result from the answers you gave. We can take the next step only when the work and the success gate are clear.',
     proof: 'Get my 3 installable opportunities. Three, or it is free.',
+    cta: skin.tone === 'evidence-first'
+      ? { label: 'Book the 30-min call', href: '#booking-panel' }
+      : { label: 'Get my 3 installable opportunities →', href: '/assessment' },
   }
 }
 

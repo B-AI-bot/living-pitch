@@ -1,5 +1,5 @@
 import { capture } from './analytics.ts'
-import { getQuestion } from './scan/index.ts'
+import { getQuestion, QUESTIONS } from './scan/index.ts'
 import { objections, getIndustryLabel, getSceneCopy, sceneQuestions } from './engine/scenes.ts'
 import {
   advanceScene,
@@ -113,21 +113,48 @@ function contextPanel(state: PitchState): string {
     <button class="button button-primary" data-action="lock-context" ${choices.industry && choices.size && choices.style ? '' : 'disabled'}>Lock the skin and continue</button>`
 }
 
-function summitView(state: PitchState): string {
+export function renderSummit(state: PitchState): string {
   const score = scoreSummit(state.answers)
-  const map = generatePreliminaryMap({ context: state.context, answers: state.answers })
-  const dimensions = Object.entries(score.dimensions)
-    .map(([dimension, severity]) => `<div><span>${escapeHtml(dimension)}</span><strong>${Math.round(severity)}</strong></div>`)
-    .join('')
-  const opportunities = map.opportunities.map((item) => `
-    <article class="map-opportunity">
-      <p class="eyebrow">#${item.rank} · ${escapeHtml(item.leak)}</p>
-      <h3>${escapeHtml(item.system.title)}</h3>
-      <p>${escapeHtml(item.system.shape)}</p>
-      <p><strong>Agents:</strong> ${escapeHtml(item.system.agents.join(', '))}</p>
-      <p><strong>Human gate:</strong> ${escapeHtml(item.system.humanGate)}</p>
-      <p class="impact-range">Estimated impact: €${formatEuros(item.impact.eurosPerWeek.low)} to €${formatEuros(item.impact.eurosPerWeek.high)} per week</p>
-    </article>`).join('')
+  const cta = getSceneCopy('summit', state.skin).cta
+  const resultSections = score.complete
+    ? (() => {
+        const map = generatePreliminaryMap({ context: state.context, answers: state.answers })
+        const dimensions = Object.entries(score.dimensions)
+          .map(([dimension, severity]) => `<div><span>${escapeHtml(dimension)}</span><strong>${Math.round(severity)}</strong></div>`)
+          .join('')
+        const opportunities = map.opportunities.map((item) => `
+          <article class="map-opportunity">
+            <p class="eyebrow">#${item.rank} · ${escapeHtml(item.leak)}</p>
+            <h3>${escapeHtml(item.system.title)}</h3>
+            <p>${escapeHtml(item.system.shape)}</p>
+            <p><strong>Agents:</strong> ${escapeHtml(item.system.agents.join(', '))}</p>
+            <p><strong>Human gate:</strong> ${escapeHtml(item.system.humanGate)}</p>
+            <p class="impact-range">Estimated impact: €${formatEuros(item.impact.eurosPerWeek.low)} to €${formatEuros(item.impact.eurosPerWeek.high)} per week</p>
+          </article>`).join('')
+        return `<section class="score-reveal">
+          <p class="eyebrow">YOUR LEVERAGE SCORE</p>
+          <div class="score-number"><strong>${Math.round(score.score)}</strong><span>/100</span></div>
+          <p>Top leak: <strong>${escapeHtml(score.topLeak ?? 'none')}</strong></p>
+          <p class="estimate">Estimated recoverable value: <strong>€${formatEuros(score.eurosPerWeek.low)} to €${formatEuros(score.eurosPerWeek.high)} per week</strong>. Directional estimate from your answers, not measured savings.</p>
+          <div class="dimension-grid">${dimensions}</div>
+        </section>
+        <section class="preliminary-map" id="preliminary-map">
+          <p class="eyebrow">PRELIMINARY DRAFT MAP</p>
+          <h2>Three system shapes ranked by impact.</h2>
+          <p class="muted">${escapeHtml(map.estimateLabel)}</p>
+          <div class="map-grid">${opportunities}</div>
+          <button class="button ${state.skin.tone === 'story-reassurance' ? 'button-primary' : 'button-quiet'}" data-action="download-map">Download / print draft map</button>
+        </section>`
+      })()
+    : `<section class="score-reveal score-building">
+        <p class="eyebrow">YOUR LEVERAGE SCORE IS BUILDING</p>
+        <h2>Complete the remaining scan questions.</h2>
+        <p>No numeric score or ranked map is shown until every territory question has an answer.</p>
+        <div class="summit-missing-questions">${QUESTIONS
+          .filter((question) => question.dimension !== 'context' && question.dimension !== 'style' && !state.answers[question.id])
+          .map((question) => scanQuestion(question.id, state))
+          .join('')}</div>
+      </section>`
   const slots = state.bookingSlots.status === 'ready'
     ? state.bookingSlots.slots.map((start) => `<button class="slot-button" data-booking-slot="${escapeHtml(start)}"><span>${escapeHtml(localSlot(start))}</span><small>shown in your local time</small></button>`).join('')
     : state.bookingSlots.status === 'loading'
@@ -140,21 +167,9 @@ function summitView(state: PitchState): string {
     : `<div class="slot-grid">${slots}</div>`
 
   return `<div class="summit-card">
-    <section class="score-reveal">
-      <p class="eyebrow">YOUR LEVERAGE SCORE</p>
-      <div class="score-number"><strong>${Math.round(score.score)}</strong><span>/100</span></div>
-      <p>Top leak: <strong>${escapeHtml(score.topLeak ?? 'none scored yet')}</strong></p>
-      <p class="estimate">Estimated recoverable value: <strong>€${formatEuros(score.eurosPerWeek.low)} to €${formatEuros(score.eurosPerWeek.high)} per week</strong>. Directional estimate from your answers, not measured savings.</p>
-      <div class="dimension-grid">${dimensions}</div>
-    </section>
-    <section class="preliminary-map" id="preliminary-map">
-      <p class="eyebrow">PRELIMINARY DRAFT MAP</p>
-      <h2>Three system shapes ranked by impact.</h2>
-      <p class="muted">${escapeHtml(map.estimateLabel)}</p>
-      <div class="map-grid">${opportunities}</div>
-      <button class="button ${state.skin.tone === 'story-reassurance' ? 'button-primary' : 'button-quiet'}" data-action="download-map">Download / print draft map</button>
-    </section>
-    <section class="booking-panel">
+    ${resultSections}
+    ${cta ? `<a class="button button-primary summit-cta" href="${escapeHtml(cta.href)}" data-action="cta">${escapeHtml(cta.label)}</a>` : ''}
+    <section class="booking-panel" id="booking-panel" tabindex="-1">
       <p class="eyebrow">BOOK THE ASSESSMENT CALL</p>
       <h2>Thirty minutes. Your real week on the table.</h2>
       <p>Pick a time. Your agent can prefill this step, but only your click can book it.</p>
@@ -221,7 +236,7 @@ function renderScene(state: PitchState): string {
         ? `<section class="case-card"><p class="eyebrow">THE CASE CARD</p>${copy.caseCard?.map((line) => `<p>${escapeHtml(line)}</p>`).join('') ?? ''}<blockquote><p>${escapeHtml(copy.quote ?? '')}</p><footer>${escapeHtml(copy.attribution ?? '')}</footer></blockquote></section><button class="button button-primary" data-action="continue">Continue to memory & cash</button>`
         : state.scene === 'memory-cash'
           ? `<section class="offer-card"><p class="eyebrow">THE OFFER</p><div class="offer-steps">${copy.offerSteps?.map((step) => `<p>${escapeHtml(step)}</p>`).join('') ?? ''}</div></section><button class="button button-primary" data-action="continue">Take this to the summit</button>`
-          : summitView(state)
+          : renderSummit(state)
   return `<section class="scene scene-${state.scene.replace('-', '')}"><p class="eyebrow">${copy.eyebrow}</p><h1>${copy.title}</h1><div class="narration" data-narration="${escapeHtml(copy.narration)}"></div><p class="proof-line">${copy.proof}</p>${questions}${controls}${objectionsPanel(state.scene, state)}</section>`
 }
 

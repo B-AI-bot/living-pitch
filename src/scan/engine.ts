@@ -125,7 +125,7 @@ export function calculateLeverageScore(answers: ScorecardAnswers): LeverageResul
     (total, dimension) => total + dimensionScores[dimension] * DIMENSION_WEIGHTS[dimension],
     0,
   ))
-  const scored = DIMENSIONS.filter((dimension) => dimensionScores[dimension] > 25)
+  const scored = DIMENSIONS.filter((dimension) => dimensionScores[dimension] >= 25)
   const topTerritory = scored.reduce<Dimension | null>(
     (top, dimension) => top === null || dimensionScores[dimension] > dimensionScores[top] ? dimension : top,
     null,

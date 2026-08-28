@@ -133,3 +133,132 @@ The three red runs failed on the reviewed behavior before implementation:
 
 - Business pages intentionally do not register `book_assessment_call`. The pitch route remains the only route with the booking tool and its human modal.
 - No real booking was made. The focused test drives registration, decision events, failure, dismissal, and reload state without calling `/api/cal/book`.
+
+## Final review fix round
+
+### Fixes
+
+- Added `complete` to the Summit score contract. Empty and partial scans keep the HUD in `building` state and render the unanswered territory questions instead of a numeric score or preliminary map.
+- Changed the top-leak threshold from `> 25` to `>= 25`. A mild leak at exactly 25 now returns its dimension.
+- Restored both Summit CTAs from `getSceneCopy()`. Evidence-first renders `Book the 30-min call` with `href="#booking-panel"`. Story-reassurance renders `Get my 3 installable opportunities →` with `href="/assessment"`.
+- Added Cal.com booking-response parsing at the worker boundary. HTTP 200 now returns booked only when the response has a validated booking identifier and no explicit failure marker.
+- Reset persisted `bookingSlots` to `idle` during hydration. This clears interrupted loading state and stale ready slots.
+- Kept the exact primary slots request, the 404-only fallback, and the human modal submit gate unchanged.
+
+### Red runs
+
+`npm run summit:smoke` exited 1 before the completeness fix:
+
+```text
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
+-   complete: true,
+```
+
+The focused UI and boundary assertions failed before their fixes:
+
+```text
+node scripts/task-3-smoke.mjs
+TypeError: renderSummit is not a function
+
+node scripts/task-3-smoke.mjs
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+actual: undefined
+expected: { label: 'Book the 30-min call', href: '#booking-panel' }
+
+node scripts/task-3-smoke.mjs
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+200 !== 502
+
+node scripts/task-3-smoke.mjs
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+actual: { status: 'loading' }
+expected: { status: 'idle' }
+```
+
+### Green runs
+
+`npm run summit:smoke` exited 0:
+
+```text
+> living-pitch@0.1.0 summit:smoke
+> node --experimental-strip-types scripts/summit-smoke.ts && node scripts/task-3-smoke.mjs
+
+summit smoke ok
+Task 3 worker and WebMCP smoke ok
+```
+
+`npm run scan:smoke` exited 0:
+
+```text
+> living-pitch@0.1.0 scan:smoke
+> node --experimental-strip-types scripts/scan-smoke.ts
+
+scan smoke ok
+```
+
+`npm run build` exited 0:
+
+```text
+> living-pitch@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 16 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  0.50 kB │ gzip:  0.30 kB
+dist/assets/index-Cx0cmhFR.css  14.22 kB │ gzip:  3.79 kB
+dist/assets/index-C_DUuy-e.js   71.32 kB │ gzip: 23.72 kB
+✓ built in 307ms
+```
+
+`bash ops/smoke.sh` exited 0:
+
+```text
+> living-pitch@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 16 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  0.50 kB │ gzip:  0.30 kB
+dist/assets/index-Cx0cmhFR.css  14.22 kB │ gzip:  3.79 kB
+dist/assets/index-C_DUuy-e.js   71.32 kB │ gzip: 23.72 kB
+✓ built in 332ms
+
+> living-pitch@0.1.0 scan:smoke
+> node --experimental-strip-types scripts/scan-smoke.ts
+
+scan smoke ok
+
+> living-pitch@0.1.0 summit:smoke
+> node --experimental-strip-types scripts/summit-smoke.ts && node scripts/task-3-smoke.mjs
+
+summit smoke ok
+Task 3 worker and WebMCP smoke ok
+webmcp cold-start smoke ok
+smoke ok
+```
+
+The final hygiene commands returned these results:
+
+```text
+git diff --check
+[no output, exit 0]
+
+em dash check ok
+anti-leak check ok
+```
+
+### Concerns
+
+- No real booking was made, and no Cal.com database was accessed.
+- The Cal.com slots fallback still depends on the current public booking endpoint and runs only after the required primary endpoint returns 404.
+- The booking rate limit remains per worker isolate, as documented above.
+- The pre-existing untracked `RETURN-W1.md` was not modified or staged.

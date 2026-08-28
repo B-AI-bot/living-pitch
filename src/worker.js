@@ -144,6 +144,30 @@ export function buildBookingPayload(input) {
   };
 }
 
+function hasBookingIdentifier(value) {
+  for (const key of ["uid", "bookingUid", "id", "bookingId"]) {
+    const identifier = value[key];
+    if (typeof identifier === "string" && identifier.trim().length > 0) return true;
+    if (typeof identifier === "number" && Number.isInteger(identifier) && identifier > 0) return true;
+  }
+  return false;
+}
+
+function isExplicitBookingFailure(value) {
+  if ("error" in value || value.success === false) return true;
+  return typeof value.status === "string" && ["error", "failed", "failure"].includes(value.status.toLowerCase());
+}
+
+export function parseCalBooking(payload) {
+  if (!isRecord(payload) || isExplicitBookingFailure(payload)) {
+    throw new UpstreamError("Cal.com returned an invalid booking response.");
+  }
+  const candidates = [payload, payload.booking, payload.data, payload.result].filter(isRecord);
+  if (candidates.some(isExplicitBookingFailure) || !candidates.some(hasBookingIdentifier)) {
+    throw new UpstreamError("Cal.com returned an invalid booking response.");
+  }
+}
+
 function enforceBookingRateLimit(request, now) {
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   const cutoff = now.getTime() - HOUR_MS;
@@ -171,7 +195,7 @@ async function bookAssessment(request, runtime, now) {
   });
   if (!upstream.ok) throw new UpstreamError(`Cal.com booking failed with status ${upstream.status}.`);
   const response = await readExternalJson(upstream, "Cal.com booking");
-  if (!isRecord(response)) throw new UpstreamError("Cal.com booking returned an invalid response.");
+  parseCalBooking(response);
   return { status: "booked", start: input.start };
 }
 

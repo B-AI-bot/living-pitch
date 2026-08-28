@@ -15,7 +15,10 @@ globalThis.window = {
 }
 globalThis.sessionStorage = {
   getItem: (key) => key === 'living-pitch-state-v1'
-    ? JSON.stringify({ booking: { status: 'booking', prefill: interruptedPrefill } })
+    ? JSON.stringify({
+        booking: { status: 'booking', prefill: interruptedPrefill },
+        bookingSlots: { status: 'loading' },
+      })
     : null,
   setItem: () => undefined,
 }
@@ -118,13 +121,67 @@ assert.deepEqual(worker.buildBookingPayload({
   },
 })
 
+const bookingRequest = (ip) => new Request('https://living.example/api/cal/book', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
+  body: JSON.stringify(interruptedPrefill),
+})
+const ambiguousBooking = await worker.handleCalRequest(
+  bookingRequest('198.51.100.20'),
+  {
+    now: () => fixedNow,
+    fetch: async () => Response.json({ error: { message: 'Slot is no longer available.' } }),
+  },
+)
+assert.equal(ambiguousBooking.status, 502)
+assert.match((await ambiguousBooking.json()).error, /invalid booking response/i)
+
+const clearBooking = await worker.handleCalRequest(
+  bookingRequest('198.51.100.21'),
+  {
+    now: () => fixedNow,
+    fetch: async () => Response.json({ id: 42, uid: 'booking-uid-42' }),
+  },
+)
+assert.equal(clearBooking.status, 200)
+assert.deepEqual(await clearBooking.json(), { status: 'booked', start: interruptedPrefill.start })
+
 const { installWebMcpTools, tools } = await import('../src/webmcp.ts')
 const state = await import('../src/engine/state.ts')
+const { renderSummit } = await import('../src/pitch.ts')
+const { getSceneCopy } = await import('../src/engine/scenes.ts')
 assert.deepEqual(state.getPitchState().booking, {
   status: 'awaiting_human_confirmation',
   prefill: interruptedPrefill,
 })
+assert.deepEqual(state.getPitchState().bookingSlots, { status: 'idle' })
 state.resetPitch()
+
+const emptySummit = renderSummit(state.getPitchState())
+assert.match(emptySummit, /Complete the remaining scan questions/i)
+assert.doesNotMatch(emptySummit, /class="score-number"/)
+assert.doesNotMatch(emptySummit, /id="preliminary-map"/)
+
+state.answerScanQuestion('pipeline_visibility', 'pipeline_leaky')
+const partialSummit = renderSummit(state.getPitchState())
+assert.match(partialSummit, /Complete the remaining scan questions/i)
+assert.doesNotMatch(partialSummit, /class="score-number"/)
+assert.doesNotMatch(partialSummit, /id="preliminary-map"/)
+state.resetPitch()
+
+state.setContext({ industry: 'wealth advisory', size: 'team_5_10', style: 'numbers', source: 'human' })
+const evidenceCta = getSceneCopy('summit', state.getPitchState().skin).cta
+assert.deepEqual(evidenceCta, { label: 'Book the 30-min call', href: '#booking-panel' })
+const evidenceSummit = renderSummit(state.getPitchState())
+assert.match(evidenceSummit, /href="#booking-panel" data-action="cta">Book the 30-min call<\/a>/)
+
+state.setContext({ industry: 'wealth advisory', size: 'team_5_10', style: 'team buy-in', source: 'human' })
+const storyCta = getSceneCopy('summit', state.getPitchState().skin).cta
+assert.deepEqual(storyCta, { label: 'Get my 3 installable opportunities →', href: '/assessment' })
+const storySummit = renderSummit(state.getPitchState())
+assert.match(storySummit, /href="\/assessment" data-action="cta">Get my 3 installable opportunities →<\/a>/)
+state.resetPitch()
+
 const names = tools.map((tool) => tool.name)
 for (const name of ['generate_preliminary_map', 'run_leverage_score', 'book_assessment_call', 'get_pitch_summary']) {
   assert.ok(names.includes(name), `${name} must be registered`)

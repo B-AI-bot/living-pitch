@@ -13,6 +13,7 @@ export type SummitScore = {
   score: number
   topLeak: LeakDimension | null
   eurosPerWeek: { low: number; high: number }
+  complete: boolean
   dimensions: Record<LeakDimension, number>
 }
 
@@ -133,6 +134,7 @@ export function scoreSummit(answers: ScorecardAnswers): SummitScore {
       low: Math.round(result.eurosRecoverable.low / WEEKS_PER_MONTH),
       high: Math.round(result.eurosRecoverable.high / WEEKS_PER_MONTH),
     },
+    complete: result.complete,
     dimensions: {
       pipeline: result.dimensionScores.pipeline,
       'follow-through': result.dimensionScores.followThrough,

@@ -13,6 +13,7 @@ assert.deepEqual(score, {
   score: 0,
   topLeak: 'pipeline',
   eurosPerWeek: { low: 384, high: 1232 },
+  complete: true,
   dimensions: {
     pipeline: 100,
     'follow-through': 100,
@@ -21,6 +22,22 @@ assert.deepEqual(score, {
     cash: 100,
   },
 })
+
+const noAnswerScore = scoreSummit({})
+assert.equal(noAnswerScore.complete, false)
+assert.equal(noAnswerScore.score, 100)
+assert.equal(noAnswerScore.topLeak, null)
+
+const partialScore = scoreSummit({ pipeline_visibility: 'pipeline_leaky' })
+assert.equal(partialScore.complete, false)
+assert.equal(partialScore.score, 76)
+assert.equal(partialScore.topLeak, 'pipeline')
+
+const mildLeakScore = scoreSummit({ pipeline_visibility: 'pipeline_some_gaps' })
+assert.equal(mildLeakScore.complete, false)
+assert.equal(mildLeakScore.score, 94)
+assert.equal(mildLeakScore.dimensions.pipeline, 25)
+assert.equal(mildLeakScore.topLeak, 'pipeline')
 
 const input = {
   context: {
