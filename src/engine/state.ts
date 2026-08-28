@@ -170,7 +170,8 @@ export function advanceScene(): PitchState {
   const next: Record<SceneId, SceneId> = {
     basecamp: 'pipeline',
     pipeline: 'follow-through',
-    'follow-through': 'summit',
+    'follow-through': 'speed',
+    speed: 'summit',
     summit: 'summit',
   }
   cover(state.scene)

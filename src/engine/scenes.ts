@@ -1,10 +1,14 @@
 import type { Industry, ObjectionLog, SceneId, Skin, Tone } from './types.ts'
+import { firstClientCase } from './copy/case.ts'
 
 export type SceneCopy = {
   eyebrow: string
   title: string
   narration: string
   proof: string
+  caseCard?: readonly string[]
+  quote?: string
+  attribution?: string
 }
 
 const industryLabels: Record<Industry, string> = {
@@ -43,6 +47,12 @@ function toneCopy(tone: Tone): { eyebrow: string; title: string; narration: stri
     narration: 'Tuesday afternoon. The thread is open, the next step is obvious, and it still waits because your judgment is carrying too much of the system.',
     proof: 'The machine does the work. You keep the name and the final word.',
   }
+}
+
+function speedProof(skin: Skin): string {
+  if (skin.generic || skin.industry === 'other-services') return '#4 the website that adapts to how you read.'
+  if (skin.industry === 'saas-recruiting') return '#1 visibility and #3 VIP radar.'
+  return '#2 process mapper and #5 desk research.'
 }
 
 export function getIndustryLabel(industry: Industry): string {
@@ -90,6 +100,17 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
           proof: 'Who & why: MBA & Engineer. 10 years abroad leading ToT programs up to $25M. The machine did the work. The human kept the name.',
         }
   }
+  if (scene === 'speed') {
+    return {
+      eyebrow: 'TERRITORY 03 · SPEED',
+      title: 'Nestor moves while you are in the room.',
+      narration: 'A fast first response matters because the right moment is short. the same discipline runs on the site you are playing right now.',
+      proof: speedProof(skin),
+      caseCard: firstClientCase.card,
+      quote: firstClientCase.quote,
+      attribution: firstClientCase.attribution,
+    }
+  }
   return {
     eyebrow: 'THE SUMMIT',
     title: 'A number, not a vibe.',
@@ -98,9 +119,10 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
   }
 }
 
-export const sceneQuestions: Record<'pipeline' | 'follow-through', string[]> = {
-  pipeline: ['pipeline_visibility', 'actual_response_time'],
+export const sceneQuestions: Record<'pipeline' | 'follow-through' | 'speed', string[]> = {
+  pipeline: ['pipeline_visibility'],
   'follow-through': ['follow_through', 'memory_access'],
+  speed: ['speed_to_lead', 'actual_response_time'],
 }
 
 export const objections: Array<{ id: string; label: string; answer: string; scenes: SceneId[] }> = [
