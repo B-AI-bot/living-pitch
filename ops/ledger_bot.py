@@ -248,12 +248,16 @@ def set_mutation_verified(mutation_id: int) -> None:
 
 def deploy_and_verify() -> tuple[bool, str]:
     """Deploy the merged main and run the local regression smoke afterwards."""
+    worktree = Path(tempfile.mkdtemp(prefix="living-pitch-deploy-"))
     try:
+        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "worktree", "add", "--detach", str(worktree), "origin/main"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=worktree, check=True, capture_output=True, text=True, timeout=300)
         deployed = subprocess.run(
-            [str(ROOT / "ops/deploy.sh")], cwd=ROOT, check=True, capture_output=True, text=True, timeout=180,
+            [str(worktree / "ops/deploy.sh")], cwd=worktree, check=True, capture_output=True, text=True, timeout=180,
         )
         smoke = subprocess.run(
-            [str(ROOT / "ops/smoke.sh")], cwd=ROOT, check=True, capture_output=True, text=True, timeout=180,
+            [str(worktree / "ops/smoke.sh")], cwd=worktree, check=True, capture_output=True, text=True, timeout=180,
         )
         output = "\n".join(part for part in (deployed.stdout, deployed.stderr, smoke.stdout, smoke.stderr) if part)
         return True, output[-2000:]
@@ -262,6 +266,9 @@ def deploy_and_verify() -> tuple[bool, str]:
     except subprocess.CalledProcessError as error:
         output = "\n".join(part for part in (error.stdout, error.stderr) if part)
         return False, output[-2000:] or str(error)
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(worktree)], cwd=ROOT, check=False, capture_output=True, text=True)
+        shutil.rmtree(worktree, ignore_errors=True)
 
 
 def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: str = "Loic") -> None:
