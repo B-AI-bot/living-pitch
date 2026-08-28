@@ -190,7 +190,7 @@ def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def append_mutation(pr: dict[str, Any], latency_s: int) -> int:
+def append_mutation(pr: dict[str, Any], latency_s: int, approved_by: str = "Loic") -> int:
     worktree = Path(tempfile.mkdtemp(prefix="living-pitch-ledger-"))
     try:
         run_gh("repo", "view", "--json", "nameWithOwner")
@@ -205,7 +205,7 @@ def append_mutation(pr: dict[str, Any], latency_s: int) -> int:
             "title": str(pr["title"]),
             "detail": f"PR #{pr['number']} shipped through the approval ledger.",
             "proposed_by": author_name(pr),
-            "approved_by": "Loic",
+            "approved_by": approved_by,
             "latency_s": latency_s,
             "verified": False,
         })
@@ -264,7 +264,7 @@ def deploy_and_verify() -> tuple[bool, str]:
         return False, output[-2000:] or str(error)
 
 
-def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
+def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: str = "Loic") -> None:
     pr = json.loads(run_gh("pr", "view", str(number), "--json", "number,title,author,url,createdAt"))
     leaks = diff_leaks(number)
     if leaks:
@@ -277,7 +277,7 @@ def approve_pr(bot_token: str, number: int, state: dict[str, Any]) -> None:
     run_gh("pr", "merge", str(number), "--squash")
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
-    mutation_id = append_mutation(pr, latency)
+    mutation_id = append_mutation(pr, latency, approved_by)
     verified, detail = deploy_and_verify()
     if verified:
         set_mutation_verified(mutation_id)
@@ -339,9 +339,28 @@ def poll_updates(bot_token: str, state: dict[str, Any]) -> None:
         save_state(state)
 
 
+NIGHT_MANDATE_FLAG = Path.home() / ".living-pitch-night-mandate"
+
+
+def night_mandate_active() -> bool:
+    return NIGHT_MANDATE_FLAG.exists()
+
+
 def cycle(bot_token: str, state: dict[str, Any]) -> None:
     for pr in list_open_prs():
-        if str(pr["number"]) not in state["notified"]:
+        number = str(pr["number"])
+        if number in state["notified"]:
+            continue
+        if night_mandate_active():
+            # Pre-launch night mandate, granted explicitly by Loic on 2026-08-28:
+            # the ledger ships autonomously overnight, every mutation is publicly
+            # labeled as such, and the human reviews and can revert in the morning.
+            # Remove ~/.living-pitch-night-mandate to return to strict tap mode.
+            state["notified"][number] = {"sent_at": time.time(), "title": pr["title"]}
+            save_state(state)
+            tell(bot_token, f"Night mandate: PR #{number} ({pr['title']}) is being shipped autonomously. Review and revert in the morning if needed. {pr['url']}")
+            approve_pr(bot_token, int(number), state, approved_by="night-mandate (pre-launch)")
+        else:
             notify_new_pr(bot_token, pr, state)
     poll_updates(bot_token, state)
 
