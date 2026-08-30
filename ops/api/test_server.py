@@ -2,6 +2,7 @@ import sys
 import unittest
 import os
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,6 +26,7 @@ from server import (
     _sse_text,
     validate_burns,
 )
+from board_store import BoardError, add_contribution, board_snapshot, record_utm_visit
 
 
 class RoastBoundaryTests(unittest.TestCase):
@@ -176,6 +178,86 @@ class ResidentTests(unittest.TestCase):
         value["state"]["score"] = True
         with self.assertRaises(Exception):
             ResidentInput.from_json(value)
+
+
+class BoardStoreTests(unittest.TestCase):
+    def test_empty_board_has_no_internal_ledger_seed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = board_snapshot(Path(directory) / "board.db", ledger_path=Path(directory) / "mutations.json")
+        self.assertEqual(snapshot["today"], [])
+        self.assertEqual(snapshot["alltime"], [])
+        self.assertEqual(snapshot["ticker"], [])
+
+    def test_seed_uses_external_accepted_mutations_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "mutations.json"
+            ledger.write_text(__import__("json").dumps([
+                {"id": 1, "ts": "2026-08-30T00:00:00Z", "title": "internal", "proposed_by": "B-AI-bot"},
+                {"id": 2, "ts": "2026-08-30T01:00:00Z", "title": "community fix", "proposed_by": "@alice"},
+                {"id": 3, "ts": "2026-08-30T02:00:00Z", "title": "mandate", "proposed_by": "night-mandate (pre-launch)"},
+            ]), encoding="utf-8")
+            snapshot = board_snapshot(Path(directory) / "board.db", ledger_path=ledger, now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc))
+        self.assertEqual(len(snapshot["alltime"]), 1)
+        self.assertEqual(snapshot["alltime"][0]["handle"], "@alice")
+        self.assertEqual(snapshot["alltime"][0]["points"], 10)
+
+    def test_seed_classifies_external_merged_pr_as_pr_points(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "mutations.json"
+            ledger.write_text(__import__("json").dumps([
+                {"id": 2, "ts": "2026-08-30T01:00:00Z", "title": "community PR", "detail": "PR #18 shipped through the approval ledger.", "proposed_by": "alice"},
+            ]), encoding="utf-8")
+            snapshot = board_snapshot(Path(directory) / "board.db", ledger_path=ledger, now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc))
+        self.assertEqual(snapshot["alltime"][0]["points"], 50)
+        self.assertEqual(snapshot["alltime"][0]["breakdown"]["pr"]["count"], 1)
+
+    def test_points_tie_uses_oldest_acceptance_and_breakdown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            add_contribution("burn", 15, "<alice>", "A burn", source_ref="burn:1", ts="2026-08-30T01:00:00Z", db_path=db)
+            add_contribution("burn", 15, "bob", "B burn", source_ref="burn:2", ts="2026-08-30T01:00:00Z", db_path=db)
+            add_contribution("mutation", 10, "<alice>", "A mutation", source_ref="mutation:1", ts="2026-08-30T03:00:00Z", db_path=db)
+            snapshot = board_snapshot(db, now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc), ledger_path=Path(directory) / "missing.json")
+        self.assertEqual([item["handle"] for item in snapshot["alltime"]], ["<alice>", "bob"])
+        self.assertEqual(snapshot["alltime"][0]["breakdown"]["burn"]["points"], 15)
+        self.assertEqual(snapshot["alltime"][0]["breakdown"]["mutation"]["points"], 10)
+        self.assertNotIn("source_ref", snapshot["ticker"][0])
+
+    def test_same_second_tie_uses_insertion_order_before_handle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            add_contribution("burn", 15, "zeta", "First", source_ref="burn:zeta", ts="2026-08-30T01:00:00Z", db_path=db)
+            add_contribution("burn", 15, "alpha", "Second", source_ref="burn:alpha", ts="2026-08-30T01:00:00Z", db_path=db)
+            snapshot = board_snapshot(db, now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc), ledger_path=Path(directory) / "missing.json")
+        self.assertEqual([item["handle"] for item in snapshot["alltime"]], ["zeta", "alpha"])
+
+    def test_contribution_boundaries_reject_bad_handle_and_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            with self.assertRaises(BoardError):
+                add_contribution("burn", 15, "x" * 41, "title", source_ref="bad:handle", db_path=db)
+            with self.assertRaises(BoardError):
+                add_contribution("burn", 15, "ok", "title", url="javascript:alert(1)", source_ref="bad:url", db_path=db)
+
+    def test_utm_visits_are_unique_and_capped_per_ref_and_day(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            now = datetime(2026, 8, 30, 12, tzinfo=timezone.utc)
+            add_contribution("burn", 15, "@alice", "Accepted burn", source_ref="burn:alice", ts="2026-08-30T00:00:00Z", db_path=db)
+            first = record_utm_visit("@alice", "visitor-1", "127.0.0.1", now=now, db_path=db)
+            duplicate = record_utm_visit("@alice", "visitor-1", "127.0.0.1", now=now, db_path=db)
+            for index in range(2, 23):
+                record_utm_visit("@alice", f"visitor-{index}", "127.0.0.1", now=now, db_path=db)
+            snapshot = board_snapshot(db, now=now, ledger_path=Path(directory) / "missing.json")
+        self.assertTrue(first["counted"])
+        self.assertFalse(duplicate["counted"])
+        self.assertEqual(snapshot["alltime"][0]["points"], 35)
+        self.assertEqual(snapshot["alltime"][0]["breakdown"]["share"]["points"], 20)
+
+    def test_utm_rejects_unknown_non_anonymous_ref(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(BoardError):
+                record_utm_visit("@unknown", "visitor-1", "127.0.0.1", db_path=Path(directory) / "board.db", ledger_path=Path(directory) / "missing.json")
 
 
 if __name__ == "__main__":
