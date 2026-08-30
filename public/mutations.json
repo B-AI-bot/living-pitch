@@ -193,5 +193,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": true
+  },
+  {
+    "id": 19,
+    "ts": "2026-08-30T12:49:14Z",
+    "title": "seo(worker): finish the brand titles, the first pass missed a trailing space",
+    "detail": "PR #27 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
