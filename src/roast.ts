@@ -1,4 +1,5 @@
 import { capture } from './analytics.ts'
+import { buildSharePayload, copyText } from './share.ts'
 
 export type RoastIntensity = 'gentle' | 'honest' | 'scorched'
 export type RoastBurn = { text: string; receipt: string; territory: 'pipeline' | 'follow-through' | 'speed' | 'memory' | 'cash' }
@@ -50,7 +51,22 @@ export async function requestRoast(input: { domain: string; intensity: RoastInte
 
 function resultMarkup(result: RoastResult, domain: string): string {
   const burns = result.burns.map((burn, index) => `<article class="roast-burn"><div class="roast-burn-top"><span class="roast-number">0${index + 1}</span><span class="roast-territory">${escapeHtml(burn.territory)}</span></div><p class="roast-text">${escapeHtml(burn.text)}</p><blockquote class="roast-receipt"><span>RECEIPT · EXACT OBSERVATION</span><strong>“${escapeHtml(burn.receipt)}”</strong></blockquote></article>`).join('')
-  return `<section class="roast-results"><div class="roast-score"><div><p class="eyebrow">ROAST SEVERITY SCORE</p><strong>${result.severity}</strong><span>/100</span></div><small>${result.cached ? 'Cached from the last 24 hours.' : 'Freshly observed and checked.'}</small></div><div class="roast-burns">${burns}</div><section class="roast-pivot"><p class="eyebrow">THE PIVOT</p><h2>${escapeHtml(result.pivot.line)}</h2><a class="button button-primary" data-action="roast-pivot" href="/?roast_domain=${encodeURIComponent(domain)}">${escapeHtml(result.pivot.cta)} →</a></section></section>`
+  return `<section class="roast-results"><div class="roast-score"><div><p class="eyebrow">ROAST SEVERITY SCORE</p><strong>${result.severity}</strong><span>/100</span></div><small>${result.cached ? 'Cached from the last 24 hours.' : 'Freshly observed and checked.'}</small></div><div class="roast-burns">${burns}</div><section class="roast-pivot"><p class="eyebrow">THE PIVOT</p><h2>${escapeHtml(result.pivot.line)}</h2><a class="button button-primary" data-action="roast-pivot" href="/?roast_domain=${encodeURIComponent(domain)}">${escapeHtml(result.pivot.cta)} →</a></section><section class="share-card roast-share-card"><p class="eyebrow">THE RECEIPT LOOP</p><h2>Let someone else take the heat.</h2><div class="share-actions"><button class="button button-primary" data-action="share-roast">Share the roast</button><button class="button button-quiet" data-action="copy-roast">Copy share text</button><span class="share-status" data-share-status aria-live="polite"></span></div></section></section>`
+}
+
+function wireRoastShare(root: HTMLElement, result: RoastResult): void {
+  const share = buildSharePayload({ score: 0, topLeak: null, kind: 'roast', severity: result.severity })
+  root.querySelector<HTMLButtonElement>('[data-action="share-roast"]')?.addEventListener('click', () => {
+    window.open(share.intentUrl, '_blank', 'noopener,noreferrer')
+    capture('share_roast', { severity: result.severity })
+  })
+  root.querySelector<HTMLButtonElement>('[data-action="copy-roast"]')?.addEventListener('click', () => {
+    void copyText(share.text).then((copied) => {
+      const status = root.querySelector<HTMLElement>('[data-share-status]')
+      if (status) status.textContent = copied ? 'Copied.' : 'Select and copy the text from the share intent.'
+      capture('share_roast_copy', { copied, severity: result.severity })
+    })
+  })
 }
 
 export function stageAgentRoast(result: RoastResult): void {
@@ -63,7 +79,7 @@ export function stageAgentRoast(result: RoastResult): void {
 
 export function renderRoast(root: HTMLElement): () => void {
   let intensity: RoastIntensity = 'honest'
-  root.innerHTML = `<main class="roast-page roast-skin-${intensity}"><div class="site-shell"><nav class="site-nav"><a class="site-mark" href="/">AI JUNGLE</a><div class="site-links"><a href="/">The Living Pitch</a><a href="/evolution">Public ledger ↗</a></div></nav><header class="roast-hero"><p class="eyebrow">THE ROAST · GORIA IS WATCHING</p><h1>Drop your URL.<br>Get the receipt.</h1><p class="business-intro">A roast of what your website actually says, shows, and loads. Every burn comes with the exact observation behind it.</p><form class="roast-form" data-roast-form><label>Your domain<input name="domain" type="text" placeholder="yourdomain.com" autocomplete="url" required maxlength="253"></label><fieldset><legend>How much truth can it take?</legend><label class="intensity-option"><input type="radio" name="intensity" value="gentle">Gentle<span>Sharp, never cruel.</span></label><label class="intensity-option"><input type="radio" name="intensity" value="honest" checked>Honest<span>The useful version.</span></label><label class="intensity-option intensity-scorched"><input type="radio" name="intensity" value="scorched">Scorched Earth<span>Bring the fire.</span></label></fieldset><button class="button button-primary" type="submit">Roast my site →</button></form><p class="roast-note">No screenshot. No invented claims. Just the page and its receipts.</p></header><div data-roast-output></div><footer class="site-footer"><strong>Human-directed, AI-executed.</strong><span>Want to improve the organism?</span><button class="footer-action" data-action="improve">Improve this</button><a href="/">Play the Living Pitch →</a></footer></div></main>`
+  root.innerHTML = `<main class="roast-page roast-skin-${intensity}"><div class="site-shell"><nav class="site-nav"><a class="site-mark" href="/">AI JUNGLE</a><div class="site-links"><a href="/">The Living Pitch</a><a href="/evolution">Public ledger ↗</a><a href="/board">Board</a><a href="/rules">Rules</a></div></nav><header class="roast-hero"><p class="eyebrow">THE ROAST · GORIA IS WATCHING</p><h1>Drop your URL.<br>Get the receipt.</h1><p class="business-intro">A roast of what your website actually says, shows, and loads. Every burn comes with the exact observation behind it.</p><form class="roast-form" data-roast-form><label>Your domain<input name="domain" type="text" placeholder="yourdomain.com" autocomplete="url" required maxlength="253"></label><fieldset><legend>How much truth can it take?</legend><label class="intensity-option"><input type="radio" name="intensity" value="gentle">Gentle<span>Sharp, never cruel.</span></label><label class="intensity-option"><input type="radio" name="intensity" value="honest" checked>Honest<span>The useful version.</span></label><label class="intensity-option intensity-scorched"><input type="radio" name="intensity" value="scorched">Scorched Earth<span>Bring the fire.</span></label></fieldset><button class="button button-primary" type="submit">Roast my site →</button></form><p class="roast-note">No screenshot. No invented claims. Just the page and its receipts.</p></header><div data-roast-output></div><footer class="site-footer"><strong>Human-directed, AI-executed.</strong><span>Want to improve the organism?</span><a href="/board">Board</a><a href="/rules">Rules</a><button class="footer-action" data-action="improve">Improve this</button><a href="/">Play the Living Pitch →</a></footer></div></main>`
   const form = root.querySelector<HTMLFormElement>('[data-roast-form]')
   const output = root.querySelector<HTMLElement>('[data-roast-output]')
   const page = root.querySelector<HTMLElement>('.roast-page')
@@ -84,6 +100,7 @@ export function renderRoast(root: HTMLElement): () => void {
       .then((result) => {
         capture('roast_done', { intensity, severity: result.severity, cached: result.cached, burns: result.burns.length })
         if (output) output.innerHTML = resultMarkup(result, domain.trim())
+        wireRoastShare(root, result)
         output?.querySelector<HTMLAnchorElement>('[data-action="roast-pivot"]')?.addEventListener('click', () => capture('roast_pivot', { intensity, domain_length: domain.trim().length }))
       })
       .catch((error: unknown) => {

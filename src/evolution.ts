@@ -53,7 +53,7 @@ function mutationCard(mutation: Mutation): string {
 export async function renderEvolution(root: HTMLElement): Promise<void> {
   root.innerHTML = `
     <main class="shell evolution-page">
-      <nav class="top-nav"><a href="/">The Living Pitch</a><span>Public changelog</span></nav>
+      <nav class="top-nav"><a href="/">The Living Pitch</a><span>Public changelog</span><a href="/board">The Board</a><a href="/rules">Rules</a></nav>
       <header class="evolution-header">
         <p class="eyebrow">The approval ledger</p>
         <h1>Watch it change.</h1>
@@ -67,6 +67,7 @@ export async function renderEvolution(root: HTMLElement): Promise<void> {
       <section id="mutation-list" class="mutation-list" aria-label="Public mutations">
         <p class="loading">Reading the ledger...</p>
       </section>
+      <footer class="site-footer"><strong>Human-directed, AI-executed.</strong><a href="/board">The Board</a><a href="/rules">Rules</a><a href="/roast">Roast my site</a><a href="/">Play the Living Pitch →</a></footer>
     </main>
   `
 

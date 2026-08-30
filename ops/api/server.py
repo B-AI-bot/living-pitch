@@ -25,11 +25,14 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+
+from board_store import BoardError, board_snapshot, db_path_from_env, record_utm_visit
 
 
 LOGGER = logging.getLogger("living-pitch-api")
@@ -42,8 +45,9 @@ for _key, _value in ():  # Keep import-time configuration side-effect free in te
     os.environ.setdefault(_key, _value)
 
 ALLOWED_ORIGINS = {
-    # The workers.dev account subdomain is welcometoaijungle, without "the".
+    # Keep the historical workers.dev hostname and the current account hostname explicit.
     "https://living-pitch.welcometoaijungle.workers.dev",
+    "https://living-pitch.welcometotheaijungle.workers.dev",
     "https://welcometotheaijungle.com",
     "https://www.welcometotheaijungle.com",
 }
@@ -783,9 +787,48 @@ ROAST_LIMITER = RateLimiter()
 MUTATION_LIMITER = RateLimiter()
 GLOBAL_ROAST_LIMITER = RateLimiter()
 RESIDENT_LIMITER = RateLimiter()
+UTM_LIMITER = RateLimiter()
 GORIA_SEMAPHORE = threading.BoundedSemaphore(2)
 RESIDENT_CACHE = ResidentCache()
 RESIDENT_LOG_LOCK = threading.Lock()
+
+
+class BoardCache:
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.created = 0.0
+        self.day = ""
+        self.database_mtime = 0
+        self.value: dict[str, Any] | None = None
+
+    def get(self) -> dict[str, Any] | None:
+        with self.lock:
+            try:
+                database_mtime = db_path_from_env().stat().st_mtime_ns
+            except OSError:
+                database_mtime = 0
+            current_day = datetime.now(timezone.utc).date().isoformat()
+            if self.value is None or self.day != current_day or self.created <= time.time() - 60 or database_mtime != self.database_mtime:
+                return None
+            return dict(self.value)
+
+    def put(self, value: dict[str, Any]) -> None:
+        with self.lock:
+            self.created = time.time()
+            self.day = datetime.now(timezone.utc).date().isoformat()
+            try:
+                self.database_mtime = db_path_from_env().stat().st_mtime_ns
+            except OSError:
+                self.database_mtime = 0
+            self.value = dict(value)
+
+    def invalidate(self) -> None:
+        with self.lock:
+            self.created = 0
+            self.value = None
+
+
+BOARD_CACHE = BoardCache()
 
 
 def roast_payload(domain: str, requested_intensity: str, observations: dict[str, Any], cached: bool = False) -> dict[str, Any]:
@@ -931,6 +974,30 @@ def handle_mutation(value: object, client_ip: str) -> dict[str, str]:
     return {"issue_url": create_mutation_issue(mutation)}
 
 
+def handle_board() -> dict[str, Any]:
+    cached = BOARD_CACHE.get()
+    if cached is not None:
+        return cached
+    snapshot = board_snapshot()
+    BOARD_CACHE.put(snapshot)
+    return snapshot
+
+
+def handle_utm_visit(value: object, client_ip_value: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != {"ref", "visitor_id"}:
+        raise RoastError("body must contain ref and visitor_id")
+    ref = value.get("ref")
+    visitor_id = value.get("visitor_id")
+    if not UTM_LIMITER.allow(client_ip_value, 60):
+        raise RoastError("Visitor tracking limit reached. Try again later.")
+    try:
+        result = record_utm_visit(ref, visitor_id, client_ip_value)
+    except BoardError as error:
+        raise RoastError(str(error)) from error
+    BOARD_CACHE.invalidate()
+    return result
+
+
 def client_ip(handler: BaseHTTPRequestHandler) -> str:
     # The API is loopback-bound behind the configured tunnel. These headers are
     # accepted only as a single syntactically valid address, never as a list.
@@ -955,6 +1022,9 @@ class ApiHandler(BaseHTTPRequestHandler):
     def _origin(self) -> str:
         return self.headers.get("Origin", "")
 
+    def _request_path(self) -> str:
+        return urllib.parse.urlsplit(self.path).path
+
     def _send_json(self, status: int, value: object) -> None:
         body = json.dumps(value, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -973,11 +1043,21 @@ class ApiHandler(BaseHTTPRequestHandler):
             return
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", self._origin())
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
         self.send_header("Access-Control-Max-Age", "600")
         self.send_header("Vary", "Origin")
         self.end_headers()
+
+    def do_GET(self) -> None:
+        if self._request_path() != "/board":
+            self._send_json(HTTPStatus.NOT_FOUND, {"error": "Not found."})
+            return
+        try:
+            self._send_json(HTTPStatus.OK, handle_board())
+        except Exception:
+            LOGGER.exception("unhandled board error")
+            self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "Unexpected API error."})
 
     def _body(self) -> object:
         try:
@@ -993,16 +1073,19 @@ class ApiHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         try:
-            if self.path == "/resident" and os.environ.get("RESIDENT_ENABLED") != "1":
+            path = self._request_path()
+            if path == "/resident" and os.environ.get("RESIDENT_ENABLED") != "1":
                 self._send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"status": "warming_up", "fallback": "canned"})
                 return
             value = self._body()
-            if self.path == "/roast":
+            if path == "/roast":
                 result = handle_roast(value, client_ip(self))
-            elif self.path == "/resident":
+            elif path == "/resident":
                 result = handle_resident(value, client_ip(self))
-            elif self.path == "/mutations/propose":
+            elif path == "/mutations/propose":
                 result = handle_mutation(value, client_ip(self))
+            elif path == "/visits/utm":
+                result = handle_utm_visit(value, client_ip(self))
             else:
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "Not found."})
                 return

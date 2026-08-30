@@ -27,6 +27,7 @@ else
 fi
 node --experimental-strip-types --check src/webmcp.ts
 npm run scan:smoke
+npm run share:smoke
 npm run summit:smoke
 node --experimental-strip-types --input-type=module -e "import('./src/webmcp.ts').then(async ({tools, installWebMcpTools}) => { if (tools.length < 6) throw new Error('WebMCP tool registration is incomplete'); if (await installWebMcpTools()) throw new Error('cold start without agent should degrade cleanly'); console.log('webmcp cold-start smoke ok') })"
 node --experimental-strip-types scripts/resident-client-smoke.mjs
@@ -43,9 +44,13 @@ done
 
 grep -q 'The Living Pitch' /tmp/living-pitch-evolution.html
 grep -q 'mutations.json' dist/assets/*.js
+grep -q 'board' dist/assets/*.js
+grep -q '"/board"' src/worker.js
+grep -q '"/rules"' src/worker.js
+grep -q 'escapeHtml(entry.contributions' src/board.ts
 API_PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
 API_CACHE="$(mktemp -d)"
-RESIDENT_ENABLED=0 ROAST_TEST_MODE=1 ROAST_CACHE_DB="$API_CACHE/roast-cache.db" RESIDENT_LOG_PATH="$API_CACHE/resident.jsonl" PORT="$API_PORT" python3 ops/api/server.py >/tmp/living-api-smoke.log 2>&1 &
+RESIDENT_ENABLED=0 ROAST_TEST_MODE=1 ROAST_CACHE_DB="$API_CACHE/roast-cache.db" BOARD_DB="$API_CACHE/board.db" RESIDENT_LOG_PATH="$API_CACHE/resident.jsonl" PORT="$API_PORT" python3 ops/api/server.py >/tmp/living-api-smoke.log 2>&1 &
 API_PID=$!
 API_MOCK_PID=""
 trap 'kill "$PREVIEW_PID" "$API_PID" "$API_MOCK_PID" 2>/dev/null || true; rm -rf "$API_CACHE"' EXIT
@@ -56,6 +61,19 @@ for _ in {1..20}; do
 done
 [[ "$API_STATUS" == "200" ]]
 python3 -c 'import json; p=json.load(open("/tmp/living-api-roast.json")); assert p["burns"] and all(item["receipt"].strip() for item in p["burns"]); assert p["pivot"]["line"].startswith("Every joke above")'
+curl --silent --fail --dump-header /tmp/living-api-board-cors.txt -H 'Origin: https://www.welcometotheaijungle.com' "http://127.0.0.1:$API_PORT/board?cache-bust=1" >/tmp/living-api-board-empty.json
+grep -qi '^Access-Control-Allow-Origin: https://www.welcometotheaijungle.com' /tmp/living-api-board-cors.txt
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-empty.json")); assert p["today"] == [] and p["alltime"] == [] and p["ticker"] == []'
+BOARD_DB="$API_CACHE/board.db" BOARD_LEDGER="$ROOT/public/mutations.json" python3 ops/api/board_admin.py add --kind burn --handle '@smoke' --points 15 --title 'Smoke accepted burn' >/tmp/living-api-board-add.json
+curl --silent --fail "http://127.0.0.1:$API_PORT/board" >/tmp/living-api-board-added.json
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-added.json")); assert p["alltime"][0]["handle"] == "@smoke" and p["alltime"][0]["points"] == 15'
+curl --silent --fail --dump-header /tmp/living-api-utm-cors.txt -X POST -H 'Origin: https://www.welcometotheaijungle.com' -H 'Content-Type: application/json' --data '{"ref":"@smoke","visitor_id":"visitor-1"}' "http://127.0.0.1:$API_PORT/visits/utm" >/tmp/living-api-visit-first.json
+grep -qi '^Access-Control-Allow-Origin: https://www.welcometotheaijungle.com' /tmp/living-api-utm-cors.txt
+for visitor in $(seq 2 22); do
+  curl --silent --fail -X POST -H 'Origin: https://www.welcometotheaijungle.com' -H 'Content-Type: application/json' --data "{\"ref\":\"@smoke\",\"visitor_id\":\"visitor-$visitor\"}" "http://127.0.0.1:$API_PORT/visits/utm" >/tmp/living-api-visit.json
+done
+curl --silent --fail "http://127.0.0.1:$API_PORT/board" >/tmp/living-api-board-capped.json
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-capped.json")); entry=next(item for item in p["alltime"] if item["handle"] == "@smoke"); assert entry["points"] == 35 and entry["breakdown"]["share"]["count"] == 20'
 curl --silent --fail --output /tmp/living-api-roast-cached.json -H 'Content-Type: application/json' --data '{"domain":"fixture.local","intensity":"scorched"}' "http://127.0.0.1:$API_PORT/roast"
 python3 -c 'import json; p=json.load(open("/tmp/living-api-roast-cached.json")); assert p["cached"] is True'
 resident_payload='{"message":"Who operates the system after launch?","state":{"skin":{"tone":"story-reassurance","industry":"other-services","seed":"smoke","generic":false},"scene":"follow-through","score":42,"beatsCovered":["basecamp","pipeline"],"objectionsRaised":[]},"channel":"agent"}'
@@ -81,10 +99,10 @@ curl --silent --dump-header /tmp/living-api-cors.txt --output /dev/null -H 'Orig
 grep -qi '^Access-Control-Allow-Origin: https://living-pitch.welcometotheaijungle.workers.dev' /tmp/living-api-cors.txt
 curl --silent --dump-header /tmp/living-api-preflight.txt --output /dev/null -X OPTIONS -H 'Origin: https://welcometotheaijungle.com' -H 'Access-Control-Request-Method: POST' "http://127.0.0.1:$API_PORT/roast"
 grep -qi '^Access-Control-Allow-Origin: https://welcometotheaijungle.com' /tmp/living-api-preflight.txt
-grep -qi '^Access-Control-Allow-Methods: POST, OPTIONS' /tmp/living-api-preflight.txt
+grep -qi '^Access-Control-Allow-Methods: GET, POST, OPTIONS' /tmp/living-api-preflight.txt
 curl --silent --dump-header /tmp/living-api-cors-denied.txt --output /dev/null -H 'Origin: https://evil.example' -H 'Content-Type: application/json' --data '{"domain":"fixture.local","intensity":"gentle"}' "http://127.0.0.1:$API_PORT/roast"
 ! grep -qi '^Access-Control-Allow-Origin:' /tmp/living-api-cors-denied.txt
-for route in / /pricing /assessment /method /agents /cases /cases/first-client /book /about /agency /ai /roast /does-not-exist; do
+for route in / /pricing /assessment /method /agents /cases /cases/first-client /book /about /agency /ai /roast /board /rules /does-not-exist; do
   curl --silent --fail "http://127.0.0.1:$PORT$route" >/tmp/living-pitch-route.html
   grep -q '<div id="app"></div>' /tmp/living-pitch-route.html
 done

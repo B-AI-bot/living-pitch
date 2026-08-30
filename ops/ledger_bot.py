@@ -22,6 +22,8 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from api.board_store import BoardError, add_contribution
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = Path(os.environ.get("LIVING_PITCH_ENV_FILE", Path.home() / ".living-pitch.env"))
@@ -30,6 +32,7 @@ STATE_FILE = Path(os.environ.get("LIVING_PITCH_LEDGER_STATE", Path.home() / ".lo
 CHAT_ID = "6019993044"
 POLL_SECONDS = 30
 TELEGRAM_TIMEOUT = 55
+BOARD_DB_PATH = Path(os.environ.get("BOARD_DB", Path.home() / ".living-pitch-api" / "board.db"))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOG = logging.getLogger("living-pitch-ledger")
@@ -126,6 +129,26 @@ def diff_leaks(pr_number: int) -> list[str]:
 def author_name(pr: dict[str, Any]) -> str:
     author = pr.get("author") or {}
     return str(author.get("login") or "unknown contributor")
+
+
+def record_contribution(pr: dict[str, Any], mutation_id: int, approved_by: str = "Loic") -> dict[str, Any] | None:
+    """Record one accepted external PR; the source ref makes retries harmless."""
+    handle = author_name(pr)
+    if handle.casefold() in {"b-ai-bot", "night-mandate"} or handle.casefold().startswith("night-mandate"):
+        return None
+    try:
+        return add_contribution(
+            "pr",
+            50,
+            handle,
+            str(pr.get("title") or f"Community PR #{pr['number']}"),
+            url=str(pr.get("url") or ""),
+            source_ref=f"pr:{pr['number']}",
+            db_path=Path(os.environ.get("BOARD_DB", BOARD_DB_PATH)),
+        )
+    except BoardError:
+        LOG.exception("could not record board contribution for PR #%s (mutation %s, approved by %s)", pr.get("number"), mutation_id, approved_by)
+        raise
 
 
 def approval_keyboard(pr_number: int) -> dict[str, Any]:
@@ -288,6 +311,11 @@ def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: 
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
     mutation_id = append_mutation(pr, latency, approved_by)
+    try:
+        record_contribution(pr, mutation_id, approved_by)
+    except Exception:
+        LOG.exception("board write failed after PR #%s acceptance; the public ledger will reconcile it", number)
+        tell(bot_token, f"PR #{number} accepted. Board write deferred; its public ledger receipt will reconcile the contribution.")
     verified, detail = deploy_and_verify()
     if verified:
         set_mutation_verified(mutation_id)

@@ -8,6 +8,35 @@ const HOUR_MS = 60 * 60 * 1000;
 const NONCE_TTL_MS = 10 * 60 * 1000;
 const bookingAttempts = new Map();
 const consumedBookingNonces = new Map();
+const PAGE_METADATA = {
+  "/": { title: "The Living Pitch", description: "A B2B site that evolves in public. See what your agent sees." },
+  "/roast": { title: "Roast my site | The Living Pitch", description: "Get a receipt-first roast of what your website actually says, shows, and loads." },
+  "/evolution": { title: "The approval ledger | The Living Pitch", description: "Watch The Living Pitch change through approved public mutations." },
+  "/board": { title: "The Board | The Living Pitch", description: "The public leaderboard for useful contributions to The Living Pitch." },
+  "/rules": { title: "Board rules | The Living Pitch", description: "How usefulness earns rank on The Living Pitch." },
+  "/pricing": { title: "Pricing | The Living Pitch", description: "Fixed prices, written success gates, and a performance partnership for owner-led firms." },
+  "/assessment": { title: "Leverage Assessment | The Living Pitch", description: "Find three installable opportunities in your firm, or pay nothing." },
+  "/method": { title: "The method | The Living Pitch", description: "Rethink the firm, build the right system, operate it daily, and train your team." },
+  "/agents": { title: "The workforce | The Living Pitch", description: "Twelve specialist agents, one approval ledger, and your processes." },
+  "/cases": { title: "Proof | The Living Pitch", description: "Verified numbers from AI agent systems built and operated in real firms." },
+  "/cases/first-client": { title: "Case 01 | The Living Pitch", description: "One system, one client, three months, and 139 qualified meetings." },
+  "/book": { title: "Book a call | The Living Pitch", description: "Thirty minutes with your real week on the table." },
+  "/about": { title: "The operator | The Living Pitch", description: "Why The Living Pitch exists and why every output stays human-directed." },
+  "/agency": { title: "The agency | The Living Pitch", description: "A business performance agency for owner-led firms of 5 to 50." },
+  "/ai": { title: "AI automation consultant | The Living Pitch", description: "AI automation built around your firm, operated daily, and measured against a gate." },
+};
+
+function withRouteMetadata(response, path) {
+  const page = PAGE_METADATA[path];
+  if (!page) return response;
+  return new HTMLRewriter()
+    .on("title", { element(element) { element.setInnerContent(page.title); } })
+    .on('meta[name="description"]', { element(element) { element.setAttribute("content", page.description); } })
+    .on('meta[property="og:title"]', { element(element) { element.setAttribute("content", page.title); } })
+    .on('meta[property="og:description"]', { element(element) { element.setAttribute("content", page.description); } })
+    .on('meta[property="og:url"]', { element(element) { element.setAttribute("content", `https://www.welcometotheaijungle.com${path}`); } })
+    .transform(response);
+}
 
 class BoundaryError extends Error {}
 class UpstreamError extends Error {}
@@ -314,10 +343,11 @@ export default {
       headers.delete("ETag");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/mutations.json", "/llms.txt", "/favicon.ico", "/robots.txt"]);
+    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/board", "/rules", "/mutations.json", "/llms.txt", "/favicon.ico", "/robots.txt"]);
     const path = url.pathname.replace(/\/$/, "") || "/";
-    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/api/")) {
-      return env.ASSETS.fetch(request);
+    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/api/")) {
+      const asset = await env.ASSETS.fetch(request);
+      return withRouteMetadata(asset, path);
     }
     // Cutover safety net: any path this app does not serve falls through to the
     // previous site (same app, alternate hostname), so indexed pages, articles

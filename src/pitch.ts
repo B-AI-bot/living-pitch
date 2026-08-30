@@ -26,6 +26,7 @@ import {
   updateBookingPrefill,
 } from './engine/state.ts'
 import { generatePreliminaryMap, scoreSummit } from './engine/summit.ts'
+import { buildSharePayload, copyText } from './share.ts'
 import type { BookingPrefill, PitchState, ResidentExchange, SceneId } from './engine/types.ts'
 
 const contextChoices = {
@@ -188,6 +189,7 @@ export function renderSummit(state: PitchState): string {
 
   return `<div class="summit-card">
     ${resultSections}
+    <section class="share-card"><p class="eyebrow">THE DIVERGENCE LOOP</p><h2>Show them what your expedition found.</h2><p class="muted">Your score and top leak travel with the question that brings the next visitor in.</p><div class="share-actions"><button class="button button-primary" data-action="share-expedition">Share my expedition</button><button class="button button-quiet" data-action="copy-expedition">Copy share text</button><span class="share-status" data-share-status aria-live="polite"></span></div></section>
     ${cta ? `<a class="button button-primary summit-cta" href="${escapeHtml(cta.href)}" data-action="cta">${escapeHtml(cta.label)}</a>` : ''}
     <section class="booking-panel" id="booking-panel" tabindex="-1">
       <p class="eyebrow">BOOK THE ASSESSMENT CALL</p>
@@ -342,7 +344,7 @@ function render(root: HTMLElement, state: PitchState, roastDomain: string): void
   const animateNarration = narrationScene !== state.scene
   cancelNarration()
   const roastContext = roastDomain ? `<div class="roast-context"><span class="agent-dot">ROAST CONTEXT</span><p>Goria just read <strong>${escapeHtml(roastDomain)}</strong>. Now let us map the leak behind the joke.</p></div>` : ''
-  root.innerHTML = `${hud(state)}<main class="pitch-shell"><nav class="pitch-nav"><a href="/">AI JUNGLE</a><div><a href="/roast">Roast my site</a> <a href="/evolution">Public ledger ↗</a></div></nav>${roastContext}${renderScene(state)}<footer class="pitch-footer"><span>Human-directed, AI-executed.</span><a href="/roast">Roast my site</a><a href="/method">Rethink · Build · Operate · Train</a><button class="footer-action" data-action="improve">Improve this</button></footer></main><div class="why-popover" hidden>We use your stated context to select copy, proof emphasis, section order, and CTA. The seed is reproducible. Turn tuning off to see a generic skin.</div>${bookingModal(state)}`
+  root.innerHTML = `${hud(state)}<main class="pitch-shell"><nav class="pitch-nav"><a href="/">AI JUNGLE</a><div><a href="/roast">Roast my site</a> <a href="/evolution">Public ledger ↗</a> <a href="/board">Board</a></div></nav>${roastContext}${renderScene(state)}<footer class="pitch-footer"><span>Human-directed, AI-executed.</span><a href="/roast">Roast my site</a><a href="/board">Board</a><a href="/rules">Rules</a><a href="/method">Rethink · Build · Operate · Train</a><button class="footer-action" data-action="improve">Improve this</button></footer></main><div class="why-popover" hidden>We use your stated context to select copy, proof emphasis, section order, and CTA. The seed is reproducible. Turn tuning off to see a generic skin.</div>${bookingModal(state)}`
   wireMutationAffordance(root)
   narrationScene = state.scene
   streamNarration(root, animateNarration)
@@ -403,6 +405,19 @@ function render(root: HTMLElement, state: PitchState, roastDomain: string): void
     void confirmBooking({ start: current.prefill.start, nonce: current.prefill.nonce, name, email, notes })
   })
   root.querySelectorAll<HTMLAnchorElement>('[data-action="cta"]').forEach((link) => link.addEventListener('click', () => capture('pitch_cta_click', { href: link.href })))
+  const summitScore = scoreSummit(state.answers)
+  const share = buildSharePayload({ score: summitScore.score, topLeak: summitScore.topLeak, kind: 'expedition' })
+  root.querySelector<HTMLButtonElement>('[data-action="share-expedition"]')?.addEventListener('click', () => {
+    window.open(share.intentUrl, '_blank', 'noopener,noreferrer')
+    capture('share_expedition', { score: Math.round(summitScore.score), top_leak: summitScore.topLeak })
+  })
+  root.querySelector<HTMLButtonElement>('[data-action="copy-expedition"]')?.addEventListener('click', () => {
+    void copyText(share.text).then((copied) => {
+      const status = root.querySelector<HTMLElement>('[data-share-status]')
+      if (status) status.textContent = copied ? 'Copied.' : 'Select and copy the text from the share intent.'
+      capture('share_expedition_copy', { copied })
+    })
+  })
   if (state.scene === 'summit' && state.bookingSlots.status === 'idle') void loadBookingSlots()
 }
 
