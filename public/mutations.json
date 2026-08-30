@@ -163,5 +163,15 @@
     "latency_s": 5,
     "verified": true,
     "category": "dev"
+  },
+  {
+    "id": 16,
+    "ts": "2026-08-30T12:39:53Z",
+    "title": "W5b: add board contribution categories",
+    "detail": "PR #24 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
