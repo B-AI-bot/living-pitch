@@ -9,7 +9,8 @@ const NONCE_TTL_MS = 10 * 60 * 1000;
 const bookingAttempts = new Map();
 const consumedBookingNonces = new Map();
 const PAGE_METADATA = {
-  "/": { title: "The Living Pitch", description: "A B2B site that evolves in public. See what your agent sees." },
+  "/": { title: "AI Jungle · Grow without hiring", description: "We install and operate AI agent systems built on your firm's own processes. Nothing ships without your yes." },
+  "/expedition": { title: "The Expedition | The Living Pitch", description: "Play the pitch. Your agent can play it with you." },
   "/roast": { title: "Roast my site | The Living Pitch", description: "Get a receipt-first roast of what your website actually says, shows, and loads." },
   "/evolution": { title: "The approval ledger | The Living Pitch", description: "Watch The Living Pitch change through approved public mutations." },
   "/board": { title: "The Board | The Living Pitch", description: "The public leaderboard for useful contributions to The Living Pitch." },
