@@ -4,6 +4,7 @@ import { renderEvolution } from './evolution'
 import { installWebMcpTools } from './webmcp'
 import { renderBusinessPage, renderNotFound } from './pages'
 import { renderPitch } from './pitch'
+import { renderLanding } from './landing'
 import { renderRoast } from './roast'
 import { wireMutationAffordance } from './colony'
 import { renderBoard } from './board.ts'
@@ -28,6 +29,8 @@ if (path === '/roast') {
 } else if (path === '/rules') {
   renderRules(root)
 } else if (path === '/') {
+  renderLanding(root)
+} else if (path === '/expedition') {
   renderPitch(root, new URLSearchParams(window.location.search).get('roast_domain') ?? '')
 } else if (businessPaths.has(path)) {
   renderBusinessPage(root, path)
