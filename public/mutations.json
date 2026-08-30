@@ -203,5 +203,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": true
+  },
+  {
+    "id": 20,
+    "ts": "2026-08-30T15:09:37Z",
+    "title": "W7: complete master site copy",
+    "detail": "PR #29 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
