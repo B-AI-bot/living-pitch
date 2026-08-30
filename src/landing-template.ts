@@ -13,6 +13,10 @@ a{color:#456B49}a:hover{color:#5C8460}
 ::selection{background:rgba(69,107,73,.28)}
 :focus-visible{outline:2px solid #5C8460;outline-offset:2px}
 @keyframes aijStamp{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+.lp-enter{opacity:0;animation:lpEnter .6s cubic-bezier(0.22,1,0.36,1) forwards}
+.lp-enter:nth-of-type(2){animation-delay:.12s}.lp-enter:nth-of-type(3){animation-delay:.24s}
+@keyframes lpEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.lp-enter{animation:none;opacity:1}}
 @keyframes aijCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
 @media (prefers-reduced-motion: reduce){.aij-anim *{animation:none !important;transition:none !important}}
 @media (max-width:820px){
@@ -81,14 +85,14 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
               <div class="v2-ctas" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:26px">
                 <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get your 3 installable opportunities</a>
               </div>
-              <p data-proof="001" class="v2-proof" style="margin:16px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">Every client from day one is still a client. Six systems running in production, from pipeline to research to brand. And nothing, ever, ships without your yes.</p>
+              <p data-proof="001" class="v2-proof" style="margin:16px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">Every client from day one is still a client. And nothing, ever, ships without your yes.</p>
             </div>
             <div class="v2-week" style="margin-top:28px;background:#FCF8F0;border:1px solid rgba(74,53,38,0.14);border-radius:14px;padding:16px 20px;max-width:460px;box-shadow:0 18px 40px -24px rgba(0,0,0,0.6)">
               <div data-sc-cue="0 0.94 0" style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.24em;color:#9A8773;margin-bottom:6px">YOUR WEEK, AS IT RUNS</div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;color:#4E3E2E">
-                <div data-sc-cue="0.06 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The proposal, still open</div>
-                <div data-sc-cue="0.14 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
-                <div data-sc-cue="0.22 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The proposal, still open</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
                 <div data-sc-cue="0.30 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The CRM, updated on Sunday night</div>
                 <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;color:#3A2A1E">Fifteen hours leak out of your week, and you know exactly where</div>
               </div>
@@ -105,8 +109,8 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
                 </span>
               </div>
               <div style="display:flex;flex-direction:column;gap:9px;border-radius:18px;background:#161109;padding:14px">
-                <div data-sc-cue="0.05 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">06:40</small>A proposal draft, holding for your yes</div>
-                <div data-sc-cue="0.14 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:15</small>Today's meeting briefs, ready. The CRM maintained itself overnight.</div>
+                <div class="lp-enter" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">06:40</small>A proposal draft, holding for your yes</div>
+                <div class="lp-enter" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:15</small>Today's meeting briefs, ready. The CRM maintained itself overnight.</div>
                 <div data-sc-cue="0.23 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:58</small>A polite reminder for the overdue invoice, holding for your yes</div>
                 <div data-sc-cue="0.34 0.97" style="align-self:flex-end;max-width:88%;border-radius:13px;border-bottom-right-radius:4px;background:#456B49;color:#fff;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">YOU · 08:04</small>You approved 14 items over coffee. Nothing shipped without your yes.</div>
                 <span data-sc-cue="0.45 0.97" style="margin-top:2px;align-self:flex-start;border-radius:20px;border:1px solid rgba(124,168,104,0.4);padding:4px 10px;font-size:11px;color:#7A9B6E">Review · Approve · Done</span>
