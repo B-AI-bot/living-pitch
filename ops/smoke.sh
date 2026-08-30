@@ -15,6 +15,83 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
 fi
 
+copy_fidelity_needles=(
+  "WHAT YOU'LL NEVER PAY US FOR"
+  'A percentage of your ad spend. Hourly overruns. "Discovery" that discovers you need more discovery. Seats, per-user fees, or any pricing that punishes you for growing. Exit fees: the system runs in your environment, and if you leave, it leaves with you.'
+  'THE QUESTIONS THAT DECIDE IT'
+  '"What if the install misses its gate?"'
+  "Then we fix it on our time until it passes, or we say plainly that we were wrong, and the partnership doesn't start. The gate exists to protect both of us from politeness."
+  '"Who owns the system?"'
+  "You do. Your environment, your data, your processes encoded. We operate it; we don't hold it hostage."
+  '"Can we pause?"'
+  "The partnership has a 6-month minimum because systems die without operation and we won't sell you a slow death. After that, you can pause, scale, or take it in-house. Phase four of our method literally trains you for that."
+  'WHAT YOU WALK AWAY WITH'
+  'The Leverage Map. A document you can act on without us.'
+  'Your top three installable opportunities, ranked by dollar impact. Not "AI ideas". Opportunities: each one comes with the process it plugs into, the agent shape that fits it, a fixed install scope, and a draft success gate. A number, not a vibe. Plus the order to install them in, because sequence is half the value.'
+  "It's yours. Take it to another vendor if you want. Nobody has, but the door is open, and that's the point."
+  'HOW IT RUNS'
+  'WEEK 1 · We listen. Interviews with you and the people who actually touch the work. We map how work really flows through your firm, not how the org chart claims it does. This is where the bodies are buried, and everyone knows exactly where.'
+  "WEEK 2 · We count. Every leak gets a number: hours lost, delay cost, error cost, deals that died of slowness. Consultants are professional skeptics, so we do the math you'd do to us."
+  'WEEK 3 · We hand you the map. A working session, not a reveal. We walk the three opportunities, you push back, we defend or concede. You leave knowing your first install, its price, and its success gate. Then you decide. No countdown timer, no "this offer expires".'
+  'WE RUN ON WHAT WE SELL'
+  "This site, and the network of businesses around it, is built, QA'd and operated by the same twelve agents we install for clients. The briefs, the follow-ups, the research, the drafts you're reading: agents drafted, a human approved. When you buy from us, you're buying the system we trust our own revenue to. We can't ship you anything we wouldn't run ourselves, because you'd be able to tell."
+  "That's the difference between installing a tool and rethinking a firm. Tools all look alike. Firms don't."
+  'BRING'
+  "Last week's calendar and one task that made you think \"a machine should be doing this by now.\""
+  "DON'T BOOK IF"
+  "You want AI to replace your judgment, you want unsupervised volume with your name on it, or you're shopping for a demo to forward. We'd be wasting your slot, and slots are the one thing we genuinely don't have many of."
+  'WHY "JUNGLE"'
+  "Because that's what the AI market is right now. Loud, overgrown, full of things that look impressive and will absolutely eat your budget. You don't survive a jungle with enthusiasm. You survive it with a guide who lives there. We live there: this site, our pipeline, our research, our follow-ups all run on the same twelve agents we install for clients. We eat here first."
+  'WHY APPROVAL-FIRST'
+  "Because owner-led firms are reputation businesses, and reputations don't die from missed opportunities. They die from one wrong message with your name on it. So we welded the rule into everything before we wrote our first line of client code: nothing ships without your yes. It slows the machine down by ten minutes a day. It's the ten minutes that lets you sleep."
+  'THE SHORT VERSION'
+  "We rethink your strategy with AI. We build on your processes. We operate every day. We train your team to need us less. Every client from day one is still a client, and part of our pay rides on the numbers we can prove. That's the whole firm, in five sentences that don't require a single slide."
+  'BAIBOT · Baboon · The Coordinator'
+  "Syncs the team, prioritizes the day, flags the risks before they're fires. Your single point of contact: you talk to Baibot, Baibot runs the rest."
+  'BOB · Lion · Sales'
+  "Opens doors and turns conversations into deals. Drafts every approach in your voice, works your dormant network, never sends a word you haven't approved."
+  'EVA · Dog · Executive Ops'
+  'Meetings to minutes to follow-through, with nothing lost. The commitments you make in room three actually happen by Friday.'
+  'NESTOR · Hummingbird · Speed-to-lead'
+  'Answers the site and the phone before leads go cold. Because the firm that responds in four minutes beats the firm that responds in four hours, almost every time.'
+  'MONI · Owl · Finance'
+  'Follows invoices, cash, and deadlines through to the end. The polite third reminder you hate sending? Moni drafts it, you approve it, it goes.'
+  'MEMO · Elephant · Memory'
+  "Keeps the full context and makes your firm's knowledge usable again. The proposal from 2023 that would save you two hours today? Found, summarized, on your desk."
+  'SoFI · Giraffe · Signals'
+  "Sees over the grass: markets, feeds, role changes, openings, before they're obvious. Your morning brief reads like you have a research desk. You do now."
+  'HIPO · Hippo · Marketing'
+  "Keeps the brand visible and grows attention every day, in your voice, from your real work. One receipt a week becomes a post, a thread, an article."
+  'SENSEI · Panda · Learning'
+  'Turns your material into coaching and tracks mastery. New hires stop asking the same five questions, because the answers coach them instead.'
+  'JIMMY · Tiger · Builder'
+  'Turns ideas into systems your team actually uses. The workflow everyone complains about on Fridays becomes a tool by the next one.'
+  'CBO · Parrot · Design'
+  'Shapes the visual language and keeps the brand sharp across everything that ships. No more decks that look like three different firms made them.'
+  'GORIA · Gorilla · QA & Security'
+  'Checks what matters and keeps the systems safe. The agent that audits the other agents, because trust is good and verification is billable.'
+  'Starts with: your calendar and your priorities, day one.'
+  "Starts with: your ICP and the 200 contacts you've been meaning to call for two years."
+  'Starts with: your last ten meetings.'
+  'Starts with: the honest truth about your current response time.'
+  'Starts with: your aging receivables.'
+  'Starts with: ingesting what your firm already knows and forgot it knew.'
+  'Starts with: the fifty accounts and people you actually care about.'
+  "Starts with: the best material you've already made and stopped using."
+  'Starts with: your onboarding pain.'
+  'Starts with: that workflow. You know the one.'
+  'Starts with: your existing brand assets.'
+  'Starts with: before anything else ships. Always.'
+)
+echo 'copy:fidelity'
+for needle in "${copy_fidelity_needles[@]}"; do
+  if ! grep -Fq -- "$needle" dist/assets/*.js; then
+    echo "copy fidelity failed: $needle" >&2
+    exit 1
+  fi
+done
+echo 'copy:fidelity ok'
+
 if rg -n "$(printf '\\u2014')" src README.md; then
   echo 'em dash scan failed' >&2
   exit 1
