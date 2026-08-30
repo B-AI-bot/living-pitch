@@ -95,4 +95,3 @@
 - [ ] Exercise category filter, empty crown, recat, label-to-category, type-to-category, and evolution backfill.
 - [ ] Run anti-leak and em dash scans and inspect the final diff.
 - [ ] Commit implementation, push branch, create a draft PR, and write the return report without adding it to Git.
-
