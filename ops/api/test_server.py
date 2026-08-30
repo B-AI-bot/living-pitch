@@ -218,6 +218,16 @@ class BoardStoreTests(unittest.TestCase):
         self.assertEqual(category, "dev")
         self.assertEqual(snapshot["alltime"][0]["contributions"][0]["category"], "dev")
 
+    def test_invalid_persisted_category_is_repaired_to_dev(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            add_contribution("burn", 15, "@alice", "Burn", source_ref="burn:invalid", db_path=db)
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                connection.execute("UPDATE contributions SET category = 'future-category'")
+            snapshot = board_snapshot(db, ledger_path=Path(directory) / "missing.json")
+        self.assertEqual(snapshot["alltime"][0]["contributions"][0]["category"], "dev")
+
     def test_category_filter_and_crowns_use_same_points_bar(self):
         with tempfile.TemporaryDirectory() as directory:
             db = Path(directory) / "board.db"

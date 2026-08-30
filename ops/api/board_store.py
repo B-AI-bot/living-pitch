@@ -88,6 +88,9 @@ def _connect(path: Path) -> sqlite3.Connection:
     if "category" not in columns:
         connection.execute("ALTER TABLE contributions ADD COLUMN category TEXT NOT NULL DEFAULT 'dev'")
     connection.execute("CREATE INDEX IF NOT EXISTS contributions_category_idx ON contributions(category)")
+    placeholders = ", ".join("?" for _ in CATEGORIES)
+    connection.execute(f"UPDATE contributions SET category = 'dev' WHERE category IS NULL OR category NOT IN ({placeholders})", CATEGORIES)
+    connection.commit()
     return connection
 
 

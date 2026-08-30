@@ -83,7 +83,7 @@ function isMutationType(value: unknown): value is MutationType {
 }
 
 function isMutationCategory(value: unknown): value is MutationCategory {
-  return value === 'dev' || value === 'copy' || value === 'seo' || value === 'design' || value === 'business' || value === 'qa'
+  return typeof value === 'string' && value.length > 0
 }
 
 function errorResult(tool: string, error: unknown): Record<string, unknown> {

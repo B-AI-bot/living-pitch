@@ -351,7 +351,11 @@ def deploy_and_verify() -> tuple[bool, str]:
 
 def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: str = "Loic") -> None:
     pr = json.loads(run_gh("pr", "view", str(number), "--json", "number,title,author,url,createdAt"))
-    category = category_for_pr(pr)
+    live_category = category_for_pr(pr)
+    notified_category = state.get("notified", {}).get(str(number), {}).get("category")
+    category = notified_category if notified_category in CATEGORIES else live_category
+    if notified_category in CATEGORIES and notified_category != live_category:
+        LOG.warning("PR #%s category changed from Telegram card %s to live %s; keeping the card category", number, notified_category, live_category)
     leaks = diff_leaks(number)
     if leaks:
         names = ", ".join(sorted(leaks))

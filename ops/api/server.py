@@ -803,10 +803,8 @@ RESIDENT_LOG_LOCK = threading.Lock()
 class BoardCache:
     def __init__(self) -> None:
         self.lock = threading.Lock()
-        self.created = 0.0
         self.day = ""
-        self.database_mtime = 0
-        self.value: dict[str | None, dict[str, Any]] = {}
+        self.value: dict[str | None, tuple[float, int, dict[str, Any]]] = {}
 
     def get(self, category: str | None) -> dict[str, Any] | None:
         with self.lock:
@@ -815,24 +813,23 @@ class BoardCache:
             except OSError:
                 database_mtime = 0
             current_day = datetime.now(timezone.utc).date().isoformat()
-            if self.day != current_day or self.created <= time.time() - 60 or database_mtime != self.database_mtime:
+            entry = self.value.get(category)
+            if self.day != current_day or entry is None or entry[0] <= time.time() - 60 or database_mtime != entry[1]:
                 return None
-            cached = self.value.get(category)
-            return dict(cached) if cached is not None else None
+            return dict(entry[2])
 
     def put(self, category: str | None, value: dict[str, Any]) -> None:
         with self.lock:
-            self.created = time.time()
+            created = time.time()
             self.day = datetime.now(timezone.utc).date().isoformat()
             try:
-                self.database_mtime = db_path_from_env().stat().st_mtime_ns
+                database_mtime = db_path_from_env().stat().st_mtime_ns
             except OSError:
-                self.database_mtime = 0
-            self.value[category] = dict(value)
+                database_mtime = 0
+            self.value[category] = (created, database_mtime, dict(value))
 
     def invalidate(self) -> None:
         with self.lock:
-            self.created = 0
             self.value = {}
 
 

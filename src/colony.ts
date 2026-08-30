@@ -1,7 +1,7 @@
 import { capture } from './analytics.ts'
 
 export type MutationType = 'copy' | 'objection' | 'burn' | 'bug' | 'idea'
-export type MutationCategory = 'dev' | 'copy' | 'seo' | 'design' | 'business' | 'qa'
+export type MutationCategory = string
 
 export type MutationInput = {
   type: MutationType
@@ -28,7 +28,7 @@ function isMutationType(value: unknown): value is MutationType {
 }
 
 function isMutationCategory(value: unknown): value is MutationCategory {
-  return value === 'dev' || value === 'copy' || value === 'seo' || value === 'design' || value === 'business' || value === 'qa'
+  return typeof value === 'string' && value.length > 0
 }
 
 export async function proposeMutation(input: MutationInput): Promise<MutationResult> {
@@ -58,12 +58,24 @@ function composerMarkup(): string {
       <label>Type<select name="type"><option value="copy">Better copy</option><option value="objection">Missing objection</option><option value="burn">Burn</option><option value="bug">Bug</option><option value="idea">Idea</option></select></label>
       <label>Proposal<textarea name="content" maxlength="2000" required></textarea></label>
       <label>Why it helps<textarea name="rationale" maxlength="2000" required></textarea></label>
-      <label>Category<select name="category"><option value="">Let the ledger classify it</option><option value="dev">Development</option><option value="copy">Copy</option><option value="seo">SEO</option><option value="design">Design</option><option value="business">Business</option><option value="qa">QA</option></select></label>
+      <label>Category<select name="category" data-category-options><option value="">Let the ledger classify it</option></select></label>
       <label>Handle (optional)<input name="handle" maxlength="160" autocomplete="nickname"></label>
       <p class="mutation-status" data-mutation-status></p>
       <div class="actions"><button class="button button-primary" type="submit">Send to the colony</button><button class="button button-quiet" type="button" data-action="close-mutation">Cancel</button></div>
     </form>
   </section>`
+}
+
+async function populateCategoryOptions(select: HTMLSelectElement): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE}/board`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10000) })
+    const payload: unknown = await response.json()
+    if (!response.ok || !isRecord(payload) || !Array.isArray(payload.categories)) return
+    const categories = payload.categories.filter((category): category is string => typeof category === 'string' && category.length > 0)
+    select.insertAdjacentHTML('beforeend', categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join(''))
+  } catch {
+    return
+  }
 }
 
 export function stageAgentMutation(result: MutationResult): void {
@@ -80,6 +92,8 @@ export function wireMutationAffordance(root: HTMLElement): void {
     button.addEventListener('click', () => {
       if (!root.querySelector('.mutation-composer')) root.insertAdjacentHTML('beforeend', `<div class="modal-backdrop mutation-backdrop">${composerMarkup()}</div>`)
       const form = root.querySelector<HTMLFormElement>('[data-mutation-form]')
+      const categorySelect = root.querySelector<HTMLSelectElement>('[data-category-options]')
+      if (categorySelect) void populateCategoryOptions(categorySelect)
       const close = () => root.querySelector('.mutation-backdrop')?.remove()
       root.querySelectorAll<HTMLElement>('[data-action="close-mutation"]').forEach((item) => item.addEventListener('click', close, { once: true }))
       form?.addEventListener('submit', (event) => {
