@@ -1,3 +1,4 @@
+import { siteNav } from './nav.ts'
 import { capture } from './analytics'
 import { firstClientCase } from './engine/copy/case.ts'
 
@@ -107,9 +108,7 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] ?? character)
 }
 
-function nav(): string {
-  return `<nav class="site-nav"><a class="site-mark" href="/">AI JUNGLE</a><div class="site-links"><a href="/agency">Agency</a><a href="/method">Method</a><a href="/agents">Agents</a><a href="/cases">Cases</a><a href="/assessment">Assessment</a><a href="/pricing">Pricing</a><a href="https://welcometotheaijungle.substack.com/subscribe">Newsletter</a><a href="/board">Board</a><a href="/roast">Roast my site</a><a href="/book">Book a call</a></div></nav>`
-}
+
 
 export function renderBusinessPage(root: HTMLElement, path: string): void {
   const page = pages[path]
@@ -117,11 +116,11 @@ export function renderBusinessPage(root: HTMLElement, path: string): void {
     renderNotFound(root)
     return
   }
-  root.innerHTML = `<main class="business-page"><div class="site-shell">${nav()}<header class="business-hero">${page.kicker ? `<p class="eyebrow">${escapeHtml(page.kicker)}</p>` : ''}<h1>${escapeHtml(page.title)}</h1>${page.intro ? `<p class="business-intro">${escapeHtml(page.intro)}</p>` : ''}<a class="button button-primary" href="${escapeHtml(page.ctaHref ?? '/assessment')}">${escapeHtml(page.cta ?? CTA)}</a></header><div class="business-sections">${page.sections.map((section) => `<section class="business-section">${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ''}${section.body.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}</section>`).join('')}</div><footer class="site-footer"><strong>Human-directed, AI-executed.</strong><span>We install and operate custom AI agent systems for owner-led firms of 5 to 50.</span><a href="https://welcometotheaijungle.substack.com/subscribe">Newsletter</a><a href="/board">Board</a><a href="/rules">Rules</a><a href="/roast">Roast my site</a><button class="footer-action" data-action="improve">Improve this</button><a href="/">Play the Living Pitch →</a></footer></div></main>`
+  root.innerHTML = `<main class="business-page"><div class="site-shell">${siteNav('light')}<header class="business-hero">${page.kicker ? `<p class="eyebrow">${escapeHtml(page.kicker)}</p>` : ''}<h1>${escapeHtml(page.title)}</h1>${page.intro ? `<p class="business-intro">${escapeHtml(page.intro)}</p>` : ''}<a class="button button-primary" href="${escapeHtml(page.ctaHref ?? '/assessment')}">${escapeHtml(page.cta ?? CTA)}</a></header><div class="business-sections">${page.sections.map((section) => `<section class="business-section">${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ''}${section.body.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}</section>`).join('')}</div><footer class="site-footer"><strong>Human-directed, AI-executed.</strong><span>We install and operate custom AI agent systems for owner-led firms of 5 to 50.</span><a href="https://welcometotheaijungle.substack.com/subscribe">Newsletter</a><a href="/board">Board</a><a href="/rules">Rules</a><a href="/roast">Roast my site</a><button class="footer-action" data-action="improve">Improve this</button><a href="/">Play the Living Pitch →</a></footer></div></main>`
   capture('business_page_view', { page: path })
 }
 
 export function renderNotFound(root: HTMLElement): void {
-  root.innerHTML = `<main class="business-page not-found"><div class="site-shell">${nav()}<header class="business-hero"><p class="eyebrow">404 · SYSTEM DRIFT</p><h1>This page leaked out of the system.</h1><p class="business-intro">It is the only thing here that ships unapproved.</p><div class="actions"><a class="button button-quiet" href="/">Back to solid ground →</a><a class="button button-primary" href="/assessment">${CTA}</a></div></header></div></main>`
+  root.innerHTML = `<main class="business-page not-found"><div class="site-shell">${siteNav('light')}<header class="business-hero"><p class="eyebrow">404 · SYSTEM DRIFT</p><h1>This page leaked out of the system.</h1><p class="business-intro">It is the only thing here that ships unapproved.</p><div class="actions"><a class="button button-quiet" href="/">Back to solid ground →</a><a class="button button-primary" href="/assessment">${CTA}</a></div></header></div></main>`
   capture('page_not_found')
 }

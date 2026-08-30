@@ -192,7 +192,7 @@ curl --silent --dump-header /tmp/living-api-cors-denied.txt --output /dev/null -
 ! grep -qi '^Access-Control-Allow-Origin:' /tmp/living-api-cors-denied.txt
 for route in / /pricing /assessment /method /agents /cases /cases/first-client /book /about /agency /ai /roast /board /rules /does-not-exist; do
   curl --silent --fail "http://127.0.0.1:$PORT$route" >/tmp/living-pitch-route.html
-  grep -q '<div id="app"></div>' /tmp/living-pitch-route.html
+  grep -q "<div id=\"app\">" /tmp/living-pitch-route.html
 done
 curl --silent --fail "http://127.0.0.1:$PORT/llms.txt" >/tmp/living-pitch-llms.txt
 grep -q 'Human-directed, AI-executed.' /tmp/living-pitch-llms.txt
@@ -201,4 +201,8 @@ for tool in provide_context choose_path answer_scan_question raise_objection get
 done
 grep -q 'navigator.modelContext' src/webmcp.ts
 grep -q 'Watch it change.' src/evolution.ts
+# Design tokens guard: the warm charte must survive every merge (lost once in a rebase).
+CSS_FILE=$(ls dist/assets/index-*.css | head -1)
+grep -q 'f3eada' "$CSS_FILE"
+if grep -q 'Inter,' "$CSS_FILE"; then echo 'design token guard failed: legacy Inter theme detected' >&2; exit 1; fi
 echo 'smoke ok'

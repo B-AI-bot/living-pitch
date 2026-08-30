@@ -71,10 +71,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
         <div class="v2-hero" style="display:grid;grid-template-columns:1.12fr 0.88fr;gap:52px;align-items:center;max-width:1180px;margin:0 auto;padding:0 32px;height:100%">
           <div>
             <div data-sc-cue="0 0.94 0">
-              <div style="display:flex;align-items:center;gap:11px;margin-bottom:22px">
-                <span style="display:flex;height:38px;width:38px;align-items:center;justify-content:center;overflow:hidden;border-radius:11px;background:#0c0a07;box-shadow:inset 0 0 0 1px rgba(124,168,104,0.3)"><img src="brand/aij-logo-icon.png" alt="" style="height:120%;width:120%;object-fit:cover"></span>
-                <span style="font-family:'Fraunces',serif;font-size:20px;color:#F1E7D6">AI <em style="color:#7A9B6E">Jungle</em></span>
-              </div>
+              
               <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.24em;color:#9A876F;margin-bottom:14px">FOR FIRMS OF 5 TO 50 WHERE EVERYTHING STILL RUNS THROUGH YOU</div>
               <h1 class="v2-h1" style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(38px,4.6vw,64px);line-height:1.04;letter-spacing:-0.02em;color:#F1E7D6">Grow <em style="color:#7A9B6E">without hiring.</em></h1>
               <p class="v2-sub" style="margin:18px 0 0 0;max-width:46ch;font-size:16.5px;line-height:1.6;color:#C6B49C">We rethink your strategy with AI. We build the system on your processes. We operate it every day. We train your team to run it. You keep your voice, your methods, and the final word: nothing ships without your yes.</p>

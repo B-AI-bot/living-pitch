@@ -3,6 +3,7 @@
 // ledger totals them, and the final stamp routes into the real funnel.
 import { LANDING_HTML, LANDING_STYLE } from './landing-template'
 import { capture } from './analytics'
+import { siteNav, bindNav } from './nav.ts'
 
 const LINES: Array<[string, string, string]> = [
   ['001', 'assessment · 3 opportunities or it is free', 'act1'],
@@ -36,7 +37,8 @@ export function renderLanding(root: HTMLElement): void {
   styleTag.textContent = LANDING_STYLE
   document.head.appendChild(styleTag)
 
-  root.innerHTML = `<div id="page" style="position:relative"><span data-sc-progress></span><div class="sc-grain" aria-hidden="true"></div>${LANDING_HTML}</div>`
+  root.innerHTML = `<div id="page" style="position:relative"><span data-sc-progress></span><div class="sc-grain" aria-hidden="true"></div><div style="position:absolute;top:0;left:0;right:0;z-index:15">${siteNav('dark')}</div>${LANDING_HTML}</div>`
+  bindNav(root)
   capture('landing_view', {})
 
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
