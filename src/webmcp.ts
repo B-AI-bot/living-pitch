@@ -1,5 +1,5 @@
 import { capture } from './analytics.ts'
-import { proposeMutation, stageAgentMutation, type MutationType } from './colony.ts'
+import { proposeMutation, stageAgentMutation, type MutationCategory, type MutationType } from './colony.ts'
 import { requestRoast, stageAgentRoast, type RoastIntensity } from './roast.ts'
 import { isResidentEnabled, requestResident, residentSessionState } from './resident.ts'
 import { getQuestion, validateScanAnswer, type ScorecardAnswers } from './scan/index.ts'
@@ -80,6 +80,10 @@ function isRoastIntensity(value: unknown): value is RoastIntensity {
 
 function isMutationType(value: unknown): value is MutationType {
   return value === 'copy' || value === 'objection' || value === 'burn' || value === 'bug' || value === 'idea'
+}
+
+function isMutationCategory(value: unknown): value is MutationCategory {
+  return value === 'dev' || value === 'copy' || value === 'seo' || value === 'design' || value === 'business' || value === 'qa'
 }
 
 function errorResult(tool: string, error: unknown): Record<string, unknown> {
@@ -280,16 +284,17 @@ export const tools: ToolDefinition[] = [
   },
   {
     name: 'propose_mutation',
-    description: 'Submit a community improvement as data for human review. Nothing ships automatically. Use type copy, objection, burn, bug, or idea.',
+    description: 'Submit a community improvement as data for human review. Nothing ships automatically. Use type copy, objection, burn, bug, or idea. Optional category values are dev, copy, seo, design, business, and qa. If omitted, the ledger maps the type: copy, objection, or burn to copy; bug to qa; idea to business.',
     inputSchema: {
       type: 'object', additionalProperties: false, required: ['type', 'content', 'rationale'],
-      properties: { type: { type: 'string', enum: ['copy', 'objection', 'burn', 'bug', 'idea'] }, content: { type: 'string' }, rationale: { type: 'string' }, handle: { type: 'string' } },
+      properties: { type: { type: 'string', enum: ['copy', 'objection', 'burn', 'bug', 'idea'] }, content: { type: 'string' }, rationale: { type: 'string' }, handle: { type: 'string' }, category: { type: 'string', enum: ['dev', 'copy', 'seo', 'design', 'business', 'qa'], description: 'Optional category override.' } },
     },
     execute: (input) => timedCall('propose_mutation', async () => {
       const value = readObject(input, 'type, content, and rationale are required.')
       if (!isMutationType(value.type) || typeof value.content !== 'string' || typeof value.rationale !== 'string' || !value.content.trim() || !value.rationale.trim()) throw new Error('type, content, and rationale must be valid non-empty values.')
       if (value.handle !== undefined && typeof value.handle !== 'string') throw new Error('handle must be a string when supplied.')
-      const result = await proposeMutation({ type: value.type, content: value.content.trim(), rationale: value.rationale.trim(), handle: typeof value.handle === 'string' ? value.handle.trim() : undefined })
+      if (value.category !== undefined && !isMutationCategory(value.category)) throw new Error('category must be dev, copy, seo, design, business, or qa when supplied.')
+      const result = await proposeMutation({ type: value.type, content: value.content.trim(), rationale: value.rationale.trim(), handle: typeof value.handle === 'string' ? value.handle.trim() : undefined, category: value.category })
       stageAgentMutation(result)
       return { ...result, rendered_for_human: 'Your agent proposed an improvement. It is waiting in the human approval ledger.' }
     }),

@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from board_store import BoardError, board_snapshot, db_path_from_env, record_utm_visit
+from board_store import BoardError, board_snapshot, category_for_type, db_path_from_env, record_utm_visit, validate_category
 
 
 LOGGER = logging.getLogger("living-pitch-api")
@@ -83,6 +83,7 @@ class MutationInput:
     content: str
     rationale: str
     handle: str | None = None
+    category: str = "dev"
 
     @classmethod
     def from_json(cls, value: object) -> "MutationInput":
@@ -92,6 +93,7 @@ class MutationInput:
         content = value.get("content")
         rationale = value.get("rationale")
         handle = value.get("handle")
+        category = value.get("category")
         if kind not in {"copy", "objection", "burn", "bug", "idea"}:
             raise ValueError("type must be copy, objection, burn, bug, or idea")
         if not isinstance(content, str) or not content.strip():
@@ -100,11 +102,16 @@ class MutationInput:
             raise ValueError("rationale is required")
         if handle is not None and not isinstance(handle, str):
             raise ValueError("handle must be a string when supplied")
+        if category is None:
+            category = category_for_type(kind)
+        else:
+            category = validate_category(category)
         return cls(
             type=kind,
             content=content.strip()[:2000],
             rationale=rationale.strip()[:2000],
             handle=handle.strip()[:160] if isinstance(handle, str) and handle.strip() else None,
+            category=category,
         )
 
 
@@ -799,20 +806,21 @@ class BoardCache:
         self.created = 0.0
         self.day = ""
         self.database_mtime = 0
-        self.value: dict[str, Any] | None = None
+        self.value: dict[str | None, dict[str, Any]] = {}
 
-    def get(self) -> dict[str, Any] | None:
+    def get(self, category: str | None) -> dict[str, Any] | None:
         with self.lock:
             try:
                 database_mtime = db_path_from_env().stat().st_mtime_ns
             except OSError:
                 database_mtime = 0
             current_day = datetime.now(timezone.utc).date().isoformat()
-            if self.value is None or self.day != current_day or self.created <= time.time() - 60 or database_mtime != self.database_mtime:
+            if self.day != current_day or self.created <= time.time() - 60 or database_mtime != self.database_mtime:
                 return None
-            return dict(self.value)
+            cached = self.value.get(category)
+            return dict(cached) if cached is not None else None
 
-    def put(self, value: dict[str, Any]) -> None:
+    def put(self, category: str | None, value: dict[str, Any]) -> None:
         with self.lock:
             self.created = time.time()
             self.day = datetime.now(timezone.utc).date().isoformat()
@@ -820,12 +828,12 @@ class BoardCache:
                 self.database_mtime = db_path_from_env().stat().st_mtime_ns
             except OSError:
                 self.database_mtime = 0
-            self.value = dict(value)
+            self.value[category] = dict(value)
 
     def invalidate(self) -> None:
         with self.lock:
             self.created = 0
-            self.value = None
+            self.value = {}
 
 
 BOARD_CACHE = BoardCache()
@@ -950,11 +958,16 @@ def create_mutation_issue(value: MutationInput) -> str:
 **Handle**
 
 {handle}
+
+**Category**
+
+> {category}
 """.format(
         kind=safe_markdown_data(value.type),
         content=safe_markdown_data(value.content),
         rationale=safe_markdown_data(value.rationale),
         handle=safe_markdown_data(value.handle or "Not provided"),
+        category=safe_markdown_data(value.category),
     )
     command = ["gh", "issue", "create", "--repo", "B-AI-bot/living-pitch", "--title", f"Community mutation: {value.type}", "--body", body, "--label", "community"]
     try:
@@ -971,15 +984,15 @@ def handle_mutation(value: object, client_ip: str) -> dict[str, str]:
     if not MUTATION_LIMITER.allow(client_ip, 10):
         raise RoastError("Mutation limit reached. Try again later.")
     mutation = MutationInput.from_json(value)
-    return {"issue_url": create_mutation_issue(mutation)}
+    return {"issue_url": create_mutation_issue(mutation), "category": mutation.category}
 
 
-def handle_board() -> dict[str, Any]:
-    cached = BOARD_CACHE.get()
+def handle_board(category: str | None = None) -> dict[str, Any]:
+    cached = BOARD_CACHE.get(category)
     if cached is not None:
         return cached
-    snapshot = board_snapshot()
-    BOARD_CACHE.put(snapshot)
+    snapshot = board_snapshot(category=category)
+    BOARD_CACHE.put(category, snapshot)
     return snapshot
 
 
@@ -1054,7 +1067,11 @@ class ApiHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "Not found."})
             return
         try:
-            self._send_json(HTTPStatus.OK, handle_board())
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query, keep_blank_values=True)
+            category = query.get("category", [None])[0]
+            self._send_json(HTTPStatus.OK, handle_board(category))
+        except BoardError as error:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
         except Exception:
             LOGGER.exception("unhandled board error")
             self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "Unexpected API error."})

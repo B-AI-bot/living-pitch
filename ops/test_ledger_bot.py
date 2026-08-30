@@ -39,6 +39,32 @@ class BoardContributionTests(unittest.TestCase):
             self.assertEqual(first["points"], 50)
             self.assertEqual(first["url"], pr["url"])
 
+    def test_label_category_wins_over_file_heuristic(self):
+        pr = {"number": 19, "labels": [{"name": "cat:copy"}]}
+        with patch.object(ledger_bot, "run_gh", return_value='{"labels":[{"name":"cat:copy"}]}'):
+            self.assertEqual(ledger_bot.category_for_pr(pr), "copy")
+
+    def test_file_heuristic_classifies_without_label(self):
+        pr = {"number": 20}
+        with patch.object(ledger_bot, "run_gh", side_effect=['{"labels":[]}', "src/engine/copy/case.ts\npublic/llms.txt\n"]):
+            self.assertEqual(ledger_bot.category_for_pr(pr), "copy")
+
+    def test_file_heuristic_covers_design_seo_business_and_dev(self):
+        cases = [
+            (["src/style.css"], "design"),
+            (["public/llms.txt"], "seo"),
+            (["docs/pricing.md"], "business"),
+            (["src/worker.js"], "dev"),
+        ]
+        for paths, expected in cases:
+            with self.subTest(paths=paths):
+                self.assertEqual(ledger_bot.category_from_paths(paths), expected)
+
+    def test_type_category_mapping_is_available_to_mutation_intake(self):
+        self.assertEqual(ledger_bot.category_for_type("burn"), "copy")
+        self.assertEqual(ledger_bot.category_for_type("bug"), "qa")
+        self.assertEqual(ledger_bot.category_for_type("idea"), "business")
+
 
 if __name__ == "__main__":
     unittest.main()

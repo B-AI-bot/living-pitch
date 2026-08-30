@@ -14,6 +14,7 @@ from server import (
     ResidentWarmingUp,
     extract_observations,
     handle_resident,
+    handle_mutation,
     is_sensitive_site,
     normalize_target,
     RoastCache,
@@ -27,6 +28,7 @@ from server import (
     validate_burns,
 )
 from board_store import BoardError, add_contribution, board_snapshot, record_utm_visit
+from board_store import CATEGORIES, recat_contribution
 
 
 class RoastBoundaryTests(unittest.TestCase):
@@ -73,6 +75,19 @@ class RoastBoundaryTests(unittest.TestCase):
         self.assertEqual(len(item.content), 2000)
         self.assertEqual(len(item.rationale), 2000)
         self.assertEqual(item.handle, "@founder")
+
+    def test_mutation_input_maps_type_to_category_and_accepts_override(self):
+        self.assertEqual(MutationInput.from_json({"type": "bug", "content": "c", "rationale": "r"}).category, "qa")
+        self.assertEqual(MutationInput.from_json({"type": "idea", "content": "c", "rationale": "r", "category": "seo"}).category, "seo")
+
+    def test_mutation_input_rejects_unknown_category(self):
+        with self.assertRaises(ValueError):
+            MutationInput.from_json({"type": "idea", "content": "c", "rationale": "r", "category": "unknown"})
+
+    def test_mutation_response_returns_retained_category(self):
+        with patch("server.create_mutation_issue", return_value="https://github.com/B-AI-bot/living-pitch/issues/42"):
+            result = handle_mutation({"type": "bug", "content": "c", "rationale": "r"}, "mutation-category-test")
+        self.assertEqual(result, {"issue_url": "https://github.com/B-AI-bot/living-pitch/issues/42", "category": "qa"})
 
     def test_sensitive_payload_softens_generation(self):
         observations = {"title": "Community grief support", "headings": ["Bereavement help"], "receipt_candidates": ["Bereavement help"]}
@@ -181,6 +196,46 @@ class ResidentTests(unittest.TestCase):
 
 
 class BoardStoreTests(unittest.TestCase):
+    def test_new_board_exposes_categories_and_unclaimed_crowns(self):
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = board_snapshot(Path(directory) / "board.db", ledger_path=Path(directory) / "missing.json", now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc))
+        self.assertEqual(snapshot["categories"], list(CATEGORIES))
+        self.assertEqual(snapshot["crowns"]["today"]["copy"], None)
+        self.assertEqual(snapshot["crowns"]["alltime"]["qa"], None)
+
+    def test_legacy_database_migrates_category_to_dev(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                connection.execute("CREATE TABLE contributions (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, kind TEXT NOT NULL, points INTEGER NOT NULL, handle TEXT NOT NULL, url TEXT, title TEXT NOT NULL, source_ref TEXT NOT NULL UNIQUE, impact_multiplier INTEGER NOT NULL DEFAULT 1)")
+                connection.execute("INSERT INTO contributions (ts, kind, points, handle, title, source_ref) VALUES ('2026-08-30T01:00:00Z', 'burn', 15, '@alice', 'Old burn', 'burn:old')")
+            snapshot = board_snapshot(db, ledger_path=Path(directory) / "missing.json", now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc))
+            with sqlite3.connect(db) as connection:
+                columns = {row[1] for row in connection.execute("PRAGMA table_info(contributions)")}
+                category = connection.execute("SELECT category FROM contributions WHERE source_ref = 'burn:old'").fetchone()[0]
+        self.assertIn("category", columns)
+        self.assertEqual(category, "dev")
+        self.assertEqual(snapshot["alltime"][0]["contributions"][0]["category"], "dev")
+
+    def test_category_filter_and_crowns_use_same_points_bar(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            add_contribution("burn", 15, "@copycat", "Copy burn", category="copy", source_ref="burn:copy", ts="2026-08-30T01:00:00Z", db_path=db)
+            add_contribution("mutation", 10, "@qa", "QA mutation", category="qa", source_ref="mutation:qa", ts="2026-08-30T02:00:00Z", db_path=db)
+            snapshot = board_snapshot(db, category="copy", ledger_path=Path(directory) / "missing.json", now=datetime(2026, 8, 30, 12, tzinfo=timezone.utc))
+        self.assertEqual([entry["handle"] for entry in snapshot["alltime"]], ["@copycat"])
+        self.assertEqual(snapshot["crowns"]["alltime"]["copy"], "@copycat")
+        self.assertEqual(snapshot["crowns"]["alltime"]["qa"], "@qa")
+
+    def test_recat_changes_existing_contribution_category(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "board.db"
+            added = add_contribution("burn", 15, "@alice", "Burn", source_ref="burn:1", db_path=db)
+            result = recat_contribution(added["id"], "copy", db_path=db)
+            snapshot = board_snapshot(db, category="copy", ledger_path=Path(directory) / "missing.json")
+        self.assertEqual(result["category"], "copy")
+        self.assertEqual(snapshot["alltime"][0]["handle"], "@alice")
     def test_empty_board_has_no_internal_ledger_seed(self):
         with tempfile.TemporaryDirectory() as directory:
             snapshot = board_snapshot(Path(directory) / "board.db", ledger_path=Path(directory) / "mutations.json")

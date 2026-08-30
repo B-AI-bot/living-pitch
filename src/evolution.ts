@@ -9,6 +9,7 @@ type Mutation = {
   approved_by: string
   latency_s: number
   verified: boolean
+  category?: string
 }
 
 function escapeHtml(value: string): string {
@@ -33,11 +34,13 @@ function formatTimestamp(value: string): string {
 
 function mutationCard(mutation: Mutation): string {
   const agent = /agent|bot/i.test(mutation.proposed_by)
+  const category = mutation.category ?? 'dev'
   return `
     <article class="mutation-card">
       <div class="mutation-meta">
         <span>${escapeHtml(formatTimestamp(mutation.ts))} UTC</span>
         <span>Mutation #${escapeHtml(String(mutation.id))}</span>
+        <span class="category-badge">${escapeHtml(category)}</span>
       </div>
       <h2>${escapeHtml(mutation.title)}</h2>
       <p>${escapeHtml(mutation.detail)}</p>
