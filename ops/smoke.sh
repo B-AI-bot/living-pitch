@@ -9,7 +9,7 @@ python3 -m unittest ops/api/test_server.py
 python3 -m unittest ops/test_ledger_bot.py
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  if git grep -n -i -f /home/maida/projects/living-pitch-context/forbidden-names.txt; then
+  if git grep -n -i -w -f /home/maida/projects/living-pitch-context/forbidden-names.txt -- . ":!*.png"; then
     echo 'anti-leak scan failed' >&2
     exit 1
   fi

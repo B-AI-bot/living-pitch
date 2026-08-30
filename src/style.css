@@ -193,3 +193,29 @@ button { font: inherit; }
 .rules-grid dt { color: var(--gold); font-size: 1.5rem; font-weight: 800; }
 .rules-grid dd { margin: 0; color: var(--muted); }
 @media (max-width: 760px) { .board-hero, .rules-hero { padding-top: 3rem; }.board-entry { grid-template-columns: 3.5rem 1fr; }.rules-grid, .crown-grid { grid-template-columns: 1fr; }.board-section-head, .crowns-head { display: block; } }
+
+/* ---------- board categories (W5b), set in the warm charte ---------- */
+.category-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 26px; }
+.category-chip {
+  font: 500 12px/1 var(--mono); letter-spacing: 0.04em; text-transform: capitalize;
+  padding: 9px 15px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border-hi); background: var(--surface-hi); color: var(--muted);
+  transition: border-color 140ms var(--ease), color 140ms var(--ease), background 140ms var(--ease);
+}
+.category-chip:hover { border-color: var(--green); color: var(--green-lo); }
+.category-chip.is-selected { border-color: var(--green); background: var(--green-tint); color: var(--green-lo); font-weight: 600; }
+.crowns { margin: 0 0 34px; }
+.crowns-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.crown-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 14px; }
+.crown-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-1); }
+.crown-card h3 { font-size: 16px; margin-bottom: 8px; text-transform: capitalize; }
+.crown-card h3::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-right: 8px; }
+.crown-card p { display: grid; gap: 2px; margin: 8px 0 0; max-width: none; }
+.crown-card span { color: var(--subtle); font: 600 10px/1.5 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.crown-card strong { color: var(--ink); overflow-wrap: anywhere; }
+.category-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.category-badge {
+  display: inline-block; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--border-hi); color: var(--green-lo);
+  font: 600 10px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; font-style: normal;
+}

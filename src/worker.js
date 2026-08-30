@@ -328,6 +328,10 @@ export async function handleCalRequest(request, runtime = {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/leads/capture" && request.method === "POST") {
+      const legacyCapture = new URL("/api/leads/capture", "https://front-staging.welcometotheaijungle.com");
+      return fetch(new Request(legacyCapture, { method: "POST", headers: request.headers, body: request.body }));
+    }
     if (url.pathname.startsWith("/api/cal/")) return handleCalRequest(request, {
       fetch: (input, init) => fetch(input, init),
       now: () => new Date(),
@@ -343,9 +347,9 @@ export default {
       headers.delete("ETag");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/board", "/rules", "/mutations.json", "/llms.txt", "/favicon.ico", "/robots.txt"]);
+    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/board", "/rules", "/expedition", "/scrollcraft.js", "/scrollcraft.css", "/mutations.json", "/llms.txt", "/favicon.ico", "/icon.png", "/apple-icon.png", "/robots.txt"]);
     const path = url.pathname.replace(/\/$/, "") || "/";
-    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/api/")) {
+    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/brand/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/api/")) {
       const asset = await env.ASSETS.fetch(request);
       return withRouteMetadata(asset, path);
     }
