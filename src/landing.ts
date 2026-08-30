@@ -7,18 +7,18 @@ import { capture } from './analytics'
 const LINES: Array<[string, string, string]> = [
   ['001', 'assessment · 3 opportunities or it is free', 'act1'],
   ['002', 'covenant · 0 messages without approval', 'act3'],
-  ['003', 'contacted 755 · replied 24%', 'act4'],
-  ['004', 'booked 139 · held 90', 'act4'],
+  ['003', 'case 01 · booked 139 · replied 24%', 'act4'],
+  ['004', 'six systems · in production', 'act4'],
   ['005', 'success gate · a number, not a vibe', 'act6'],
   ['006', 'every first client · still a client', 'act6'],
 ]
 const PAIRS = [
-  { pain: 'The doors you never have time to knock on', name: 'Bob', tag: 'LION · SALES', initial: 'Bo', grad: 'linear-gradient(135deg,#C98A3C,#9A5E1F)', desc: 'Opens doors and turns conversations into deals.' },
-  { pain: 'Meetings that leak into midnight admin', name: 'Eva', tag: 'DOG · EXECUTIVE OPS', initial: 'Ev', grad: 'linear-gradient(135deg,#C28A6A,#8a5536)', desc: 'Meetings to minutes to follow-through, nothing lost.' },
-  { pain: 'The role change you heard about too late', name: 'SoFI', tag: 'SIGNALS', initial: 'So', grad: 'linear-gradient(135deg,#5C9A8A,#2F6F66)', desc: 'Sees moves, markets and openings before they become obvious.' },
-  { pain: 'The brand that goes quiet when you get busy', name: 'Hipo', tag: 'HIPPO · MARKETING', initial: 'Hi', grad: 'linear-gradient(135deg,#7A9B6E,#456B49)', desc: 'Keeps you visible and growing every day.' },
-  { pain: 'Invoices you chase at quarter end', name: 'Moni', tag: 'FINANCE', initial: 'Mo', grad: 'linear-gradient(135deg,#6a6760,#3a3a37)', desc: 'Follows cash and deadlines through to the end.' },
-  { pain: 'The context that lives only in your head', name: 'Memo', tag: 'ELEPHANT · MEMORY', initial: 'Me', grad: 'linear-gradient(135deg,#9aa0a6,#5f6b72)', desc: 'Keeps the full picture and makes it usable again.' },
+  { pain: 'For an interim management and executive search advisory.', name: 'The visibility and network engine', tag: 'SOFI · BOB · MEMO · HUMAN APPROVED', initial: '01', grad: 'linear-gradient(135deg,#5C8460,#33522F)', desc: 'The network gets worked even when the partner cannot. Signals watched daily, briefs on the desk before every meeting, a CRM that maintains itself.' },
+  { pain: 'For a consulting practice.', name: 'The process mapper', tag: 'MEMO · EVA · PARTNERS VALIDATE', initial: '02', grad: 'linear-gradient(135deg,#C28A6A,#8a5536)', desc: 'An agent interviews the team, maps how work actually flows, and shows where expertise is trapped in repetitive steps. The map becomes the install plan.' },
+  { pain: 'For an M&A advisory and executive search boutique.', name: 'The VIP-circle radar', tag: 'SOFI · MEMO · ALERTS ONLY', initial: '03', grad: 'linear-gradient(135deg,#5C9A8A,#2F6F66)', desc: 'A quiet radar over the people who matter: role changes, deals closing, signals worth a call. The machine watches. The partner decides who to reach, and when.' },
+  { pain: 'For an HR and team-building boutique.', name: 'The website that adapts to how you read', tag: 'NESTOR · MEMO · EVERY VARIANT APPROVED', initial: '04', grad: 'linear-gradient(135deg,#7A9B6E,#456B49)', desc: 'The site reads how each visitor decides and reorders itself to match, with a visible toggle and a clean opt-out. The same discipline runs on the site you are reading right now.' },
+  { pain: 'For cross-border advisory work.', name: 'Consulting-grade desk research', tag: 'SOFI · MEMO · A SENIOR HUMAN SIGNS', initial: '05', grad: 'linear-gradient(135deg,#C98A3C,#9A5E1F)', desc: 'Research desks that produce partner-grade deliverables on real consulting frameworks, with every source labeled: fact, inference, or hypothesis.' },
+  { pain: 'For a principal with a public track record.', name: 'The voice-faithful drafting agent', tag: 'HIPO · MEMO · THEY APPROVE EVERY WORD', initial: '06', grad: 'linear-gradient(135deg,#9aa0a6,#5f6b72)', desc: 'Trained on their own appearances, it drafts in their voice and their positions. Not AI voice. Their voice.' },
 ]
 const TYPED_FULL = 'your first three opportunities · pending your yes'
 const EASE = (t: number) => 1 - Math.pow(1 - t, 3)

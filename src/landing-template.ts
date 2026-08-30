@@ -75,21 +75,22 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
                 <span style="display:flex;height:38px;width:38px;align-items:center;justify-content:center;overflow:hidden;border-radius:11px;background:#0c0a07;box-shadow:inset 0 0 0 1px rgba(124,168,104,0.3)"><img src="brand/aij-logo-icon.png" alt="" style="height:120%;width:120%;object-fit:cover"></span>
                 <span style="font-family:'Fraunces',serif;font-size:20px;color:#F1E7D6">AI <em style="color:#7A9B6E">Jungle</em></span>
               </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.24em;color:#9A876F;margin-bottom:14px">FOR FIRMS OF 5 TO 50 WHERE EVERYTHING STILL RUNS THROUGH YOU</div>
               <h1 class="v2-h1" style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(38px,4.6vw,64px);line-height:1.04;letter-spacing:-0.02em;color:#F1E7D6">Grow <em style="color:#7A9B6E">without hiring.</em></h1>
-              <p class="v2-sub" style="margin:18px 0 0 0;max-width:46ch;font-size:16.5px;line-height:1.6;color:#C6B49C">AI Jungle installs and operates agent systems built on your firm's own processes. Your expertise and your voice stay yours. We charge to operate the system and share in the performance we can prove.</p>
+              <p class="v2-sub" style="margin:18px 0 0 0;max-width:46ch;font-size:16.5px;line-height:1.6;color:#C6B49C">We rethink your strategy with AI. We build the system on your processes. We operate it every day. We train your team to run it. You keep your voice, your methods, and the final word: nothing ships without your yes.</p>
               <div class="v2-ctas" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:26px">
                 <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get your 3 installable opportunities</a>
               </div>
-              <p data-proof="001" class="v2-proof" style="margin:16px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">139 qualified meetings booked in 90 days for our first client. Every message human approved.</p>
+              <p data-proof="001" class="v2-proof" style="margin:16px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">Every client from day one is still a client. Six systems running in production, from pipeline to research to brand. And nothing, ever, ships without your yes.</p>
             </div>
             <div class="v2-week" style="margin-top:28px;background:#FCF8F0;border:1px solid rgba(74,53,38,0.14);border-radius:14px;padding:16px 20px;max-width:460px;box-shadow:0 18px 40px -24px rgba(0,0,0,0.6)">
               <div data-sc-cue="0 0.94 0" style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.24em;color:#9A8773;margin-bottom:6px">YOUR WEEK, AS IT RUNS</div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;color:#4E3E2E">
-                <div data-sc-cue="0.06 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Tuesday's follow-up, still owed</div>
-                <div data-sc-cue="0.14 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The brief written at 11pm</div>
-                <div data-sc-cue="0.22 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">CRM updated on Sunday</div>
-                <div data-sc-cue="0.30 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">A contact changed roles. You will hear in three weeks.</div>
-                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;color:#3A2A1E">15 hours this week, gone to work no client pays for</div>
+                <div data-sc-cue="0.06 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The proposal, still open</div>
+                <div data-sc-cue="0.14 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
+                <div data-sc-cue="0.22 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
+                <div data-sc-cue="0.30 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The CRM, updated on Sunday night</div>
+                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;color:#3A2A1E">Fifteen hours leak out of your week, and you know exactly where</div>
               </div>
             </div>
           </div>
@@ -99,14 +100,14 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
               <div data-sc-cue="0 0.96 0" style="display:flex;align-items:center;gap:10px;padding:8px 10px 12px 10px">
                 <span style="display:flex;height:38px;width:38px;align-items:center;justify-content:center;border-radius:999px;background:linear-gradient(135deg,#5C8460,#33522F);font-family:'Fraunces',serif;font-size:15px;color:#fff">B</span>
                 <span>
-                  <span style="display:block;font-size:14px;font-weight:600;color:#F1E7D6">B'AI.bot</span>
-                  <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7A9B6E"><i style="display:block;height:6px;width:6px;border-radius:999px;background:#7A9B6E"></i> operating your week</span>
+                  <span style="display:block;font-size:14px;font-weight:600;color:#F1E7D6">Your approval ledger</span>
+                  <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7A9B6E"><i style="display:block;height:6px;width:6px;border-radius:999px;background:#7A9B6E"></i> holding until your yes</span>
                 </span>
               </div>
               <div style="display:flex;flex-direction:column;gap:9px;border-radius:18px;background:#161109;padding:14px">
-                <div data-sc-cue="0.05 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">BOB · 06:40</small>Follow-ups drafted before breakfast</div>
-                <div data-sc-cue="0.14 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">EVA · 07:15</small>Briefs land before every meeting. The CRM maintains itself.</div>
-                <div data-sc-cue="0.23 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">SOFI · 07:58</small>The role change flagged this morning, with the angle</div>
+                <div data-sc-cue="0.05 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">06:40</small>A proposal draft, holding for your yes</div>
+                <div data-sc-cue="0.14 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:15</small>Today's meeting briefs, ready. The CRM maintained itself overnight.</div>
+                <div data-sc-cue="0.23 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:58</small>A polite reminder for the overdue invoice, holding for your yes</div>
                 <div data-sc-cue="0.34 0.97" style="align-self:flex-end;max-width:88%;border-radius:13px;border-bottom-right-radius:4px;background:#456B49;color:#fff;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">YOU · 08:04</small>You approved 14 items over coffee. Nothing shipped without your yes.</div>
                 <span data-sc-cue="0.45 0.97" style="margin-top:2px;align-self:flex-start;border-radius:20px;border:1px solid rgba(124,168,104,0.4);padding:4px 10px;font-size:11px;color:#7A9B6E">Review · Approve · Done</span>
               </div>
@@ -129,7 +130,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           <div data-reveal="1" data-delay="220" style="border-radius:18px;border:1px solid rgba(124,168,104,0.16);background:radial-gradient(130% 130% at 70% 20%, #15100a 0%, #0b0806 100%);padding:34px;box-shadow:0 20px 44px -20px rgba(20,14,8,0.7)">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#9A876F;margin-bottom:12px">DEFAULT 2 · AUTOPILOT</div>
             <h3 style="margin:0 0 12px 0;font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:#F1E7D6">Automate blindly, and your name pays for it.</h3>
-            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#C6B49C">The market's fix is autopilot. Hire AI employees, load the sequences, let it rip. The results are in: generic AI outreach now replies at under 1 percent, and half of buyers say they prefer brands that keep generative AI out of the conversation.</p>
+            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#C6B49C">The market's fix is autopilot. The AI circus sells you off-the-shelf AI employees: generic personas that write like no one and sign in your name. You're right not to trust them. The results are in: generic AI outreach now replies at under 1 percent, and half of buyers say they prefer brands that keep generative AI out of the conversation.</p>
             <p style="margin:0;font-size:15.5px;line-height:1.65;color:#C6B49C">In a firm where the product is your judgment, one robotic email costs more than it saves.</p>
           </div>
         </div>
@@ -150,7 +151,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
             </h2>
           </div>
           <p data-sc-cue="0.3 0.95" style="margin:34px 0 0 0;font-size:16.5px;line-height:1.7;color:#C6B49C;max-width:62ch">Agents watch your signals, draft your outreach, chase the invoices, prepare the briefs. Every message, quote and post holds in one approval ledger until you say go, in the messaging app you already use.</p>
-          <p data-sc-cue="0.44 0.97" style="margin:16px 0 0 0;font-size:16.5px;line-height:1.7;color:#F1E7D6;max-width:62ch">Autopilot is why inboxes stopped trusting anyone. Approval is why our replies run at 24 percent.</p>
+          <p data-sc-cue="0.44 0.97" style="margin:16px 0 0 0;font-size:16.5px;line-height:1.7;color:#F1E7D6;max-width:62ch">It slows the machine down by ten minutes a day. It is the ten minutes that lets you sleep.</p>
         </div>
       </div>
     </section>
@@ -158,14 +159,14 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
     <section id="act4" data-acts="003 004" data-screen-label="Act 4 · The receipts" class="v2-pad" style="background:#F3EADA;padding:110px 32px 90px 32px">
       <div style="max-width:1180px;margin:0 auto">
         <h2 data-reveal="1" style="margin:0 0 48px 0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(30px,3.6vw,46px);line-height:1.08;letter-spacing:-0.02em;color:#3A2A1E">Verified numbers, <em style="color:#456B49">not vibes.</em></h2>
+        <p data-reveal="1" style="margin:-30px 0 40px 0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;color:#9A8773">CASE 01 · ONE SYSTEM. ONE CLIENT. THREE MONTHS.</p>
         <div class="v2-cols2" style="display:grid;grid-template-columns:1fr 1.1fr;gap:44px;align-items:start">
           <div id="countHost" style="border-radius:18px;border:1px solid rgba(74,53,38,0.12);background:#FFFDF8;padding:10px 30px;box-shadow:0 14px 30px -18px rgba(60,42,28,0.25)">
-            <div data-reveal="1" style="display:flex;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px dashed rgba(74,53,38,0.15)"><span data-count="755" style="font-family:'JetBrains Mono',monospace;font-size:40px;color:#3A2A1E;min-width:120px;text-align:right">0</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;color:#9A8773">executives contacted</span></div>
             <div data-proof="003" data-reveal="1" data-delay="80" style="display:flex;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px dashed rgba(74,53,38,0.15)"><span data-count="24" data-suffix="%" style="font-family:'JetBrains Mono',monospace;font-size:40px;color:#456B49;min-width:120px;text-align:right">0</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;color:#9A8773">replied</span></div>
             <div data-reveal="1" data-delay="160" style="display:flex;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px dashed rgba(74,53,38,0.15)"><span data-count="139" style="font-family:'JetBrains Mono',monospace;font-size:40px;color:#3A2A1E;min-width:120px;text-align:right">0</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;color:#9A8773">qualified meetings booked</span></div>
             <div data-proof="004" data-reveal="1" data-delay="240" style="display:flex;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px dashed rgba(74,53,38,0.15)"><span data-count="90" style="font-family:'JetBrains Mono',monospace;font-size:40px;color:#3A2A1E;min-width:120px;text-align:right">0</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;color:#9A8773">meetings held</span></div>
             <div data-reveal="1" data-delay="320" style="display:flex;align-items:baseline;gap:18px;padding:16px 0"><span data-count="0" style="font-family:'JetBrains Mono',monospace;font-size:40px;color:#456B49;min-width:120px;text-align:right">0</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;color:#9A8773">messages sent without approval</span></div>
-            <p data-reveal="1" data-delay="400" style="margin:0;padding:0 0 18px 0;font-size:13.5px;color:#9A8773">First client, first three months. In production, not in a deck.</p>
+            <p data-reveal="1" data-delay="400" style="margin:0;padding:0 0 18px 0;font-size:13.5px;color:#9A8773">First client, first three months. In production, not in a deck. For scale: cold outreach averages a 3.4 percent reply rate across billions of sends (Instantly 2026 benchmark).</p>
           </div>
           <div>
             <figure data-reveal="1" data-delay="150" style="margin:0;padding:28px;background:#FFFDF8;border:1px solid rgba(74,53,38,0.12);border-radius:18px;box-shadow:0 14px 30px -18px rgba(60,42,28,0.25)">
@@ -188,13 +189,13 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
       <div data-sc-stage>
         <div id="rail" data-sc-pan="0.05" style="display:flex;align-items:center;gap:30px;height:100%;padding:0 7vw;width:max-content">
           <div class="v2-cell" style="width:380px;min-width:380px;flex:none">
-            <h2 style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(30px,3.4vw,44px);line-height:1.1;letter-spacing:-0.02em;color:#3A2A1E">Twelve agents. One job each. <em style="color:#456B49">Your processes.</em></h2>
-            <p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:#6A5443;max-width:34ch">Six of them, read left to right: the pain as it runs, the agent that takes it.</p>
+            <h2 style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(30px,3.4vw,44px);line-height:1.1;letter-spacing:-0.02em;color:#3A2A1E">What we install. <em style="color:#456B49">Not what we imagine.</em></h2>
+            <p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:#6A5443;max-width:34ch">The names stay private until our clients approve their numbers. The shapes are real, running, and yours to steal ideas from.</p>
           </div>
           <span data-lp="pairs"></span>
           <div class="v2-cell" style="width:420px;min-width:420px;flex:none">
-            <p style="margin:0;font-family:'Fraunces',serif;font-size:clamp(20px,2vw,27px);line-height:1.45;color:#3A2A1E">Not another cast of generic personas. Off-the-shelf AI employees ship someone else's process and plateau in a month. Ours are shaped to yours in the Leverage Assessment, which is why the results compound.</p>
-            <p style="margin:22px 0 0 0"><a href="/agents" style="font-size:15px;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">Meet the full team →</a></p>
+            <p style="margin:0;font-family:'Fraunces',serif;font-size:clamp(20px,2vw,27px);line-height:1.45;color:#3A2A1E">Not another team of generic personas. Off-the-shelf AI employees ship someone else's process with your logo on it. We map yours first. That is why the results compound instead of plateauing.</p>
+            <p style="margin:22px 0 0 0"><a href="/agents" style="font-size:15px;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">Find your first install →</a></p>
           </div>
         </div>
       </div>
@@ -286,7 +287,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">How:</strong> three steps. Leverage Assessment, Install (typically $7,500 to $15,000), Partnership (from $5,000/month plus performance share).</p>
           <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">Who:</strong> owner-led consulting, advisory, search, wealth and professional services firms, 5 to 50 people, where growth still runs on the founder's hours.</p>
           <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">Control:</strong> nothing ships without your yes. Every message, quote and post holds in one approval ledger until the owner approves, in the messaging app you already use.</p>
-          <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">Proof:</strong> 755 executives contacted, 24 percent replied, 139 qualified meetings booked in 3 months, 90 held, every message human approved.</p>
+          <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">Proof:</strong> Every client from day one is still a client. Six systems in production across pipeline, operations, research and brand. Case level: 139 qualified meetings booked in 3 months, 24 percent reply rate, 90 held, 0 messages without approval.</p>
           <p style="margin:0"><strong style="color:#C6B49C;font-weight:600">Privacy:</strong> each client runs in a private, secured environment. Your data stays yours, your models if you prefer, no lock-in.</p>
           <p style="margin:0;grid-column:1 / -1"><strong style="color:#C6B49C;font-weight:600">Start:</strong> the Leverage Assessment, or a 30-minute call if you already know the work you want scoped.</p>
         </div>
