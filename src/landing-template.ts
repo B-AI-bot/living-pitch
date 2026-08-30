@@ -173,7 +173,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
               <blockquote style="margin:0;font-family:'Fraunces',serif;font-size:19px;line-height:1.5;color:#3A2A1E">"In the last three months, the agent helped me to book more than 90 qualified meetings with executives I would never have had time to reach, and I approved every single message before it went out. It works while I am in meetings."</blockquote>
               <figcaption style="display:flex;align-items:center;gap:14px;margin-top:20px">
                 <span style="display:flex;width:52px;height:52px;flex:none;align-items:center;justify-content:center;border-radius:999px;background:linear-gradient(135deg,#5C8460,#33522F);font-family:'Fraunces',serif;font-size:18px;color:#fff">FE</span>
-                <span style="font-size:13.5px;line-height:1.5;color:#6A5443">Franck Euvrard, Partner, Asia-Connect Executive Partners<br><a href="https://www.trustpilot.com" style="font-size:12.5px">Verified review on Trustpilot →</a></span>
+                <span style="font-size:13.5px;line-height:1.5;color:#6A5443">Franck Euvrard, Partner, Asia-Connect Executive Partners<br><a href="https://www.trustpilot.com/review/welcometotheaijungle.com" style="font-size:12.5px">Verified review on Trustpilot →</a></span>
               </figcaption>
             </figure>
             <div data-reveal="1" data-delay="250" style="margin-top:20px;padding:22px 26px;border:1px solid rgba(74,53,38,0.14);border-radius:14px">
@@ -265,15 +265,15 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
             <input type="email" required="required" placeholder="you@yourfirm.com" style="flex:1;min-width:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:11px 14px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;color:#F1E7D6">
             <button type="submit" style="background:#456B49;color:#F1E7D6;border:none;border-radius:11px;padding:11px 18px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer">Subscribe</button>
           </form>
-          <div data-lp="subNote" hidden><p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A9B6E;margin:10px 0 0 0">subscribed · first issue Friday</p></div>
+          <p style="font-size:12px;margin:10px 0 0 0"><a href="https://welcometotheaijungle.substack.com/subscribe" style="color:#9A876F">Or subscribe directly on Substack →</a></p><div data-lp="subNote" hidden><p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A9B6E;margin:10px 0 0 0">subscribed · first issue Friday</p></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">PRODUCT</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/approach" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The public ledger</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The public ledger</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">COMPANY</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/journal" style="color:#C6B49C;text-decoration:none">Journal</a><a href="mailto:hello@welcometotheaijungle.com" style="color:#C6B49C;text-decoration:none">Contact</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/blog" style="color:#C6B49C;text-decoration:none">Journal</a><a href="mailto:hello@welcometotheaijungle.com" style="color:#C6B49C;text-decoration:none">Contact</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">VENTURES</div>
