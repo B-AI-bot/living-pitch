@@ -22,7 +22,7 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from api.board_store import BoardError, add_contribution
+from api.board_store import CATEGORIES, BoardError, add_contribution, category_for_type
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,17 +126,65 @@ def diff_leaks(pr_number: int) -> list[str]:
     return [name for name in forbidden_names() if re.search(rf"\b{re.escape(name)}\b", diff, re.IGNORECASE)]
 
 
+def category_from_paths(paths: list[str]) -> str:
+    lowered = [path.strip().casefold() for path in paths if path.strip()]
+    if any(path.endswith(".css") or re.search(r"(?:^|/)style(?:[./_-]|$)", path) for path in lowered):
+        return "design"
+    if any("engine/copy" in path or "grounding" in path or ("pages" in path and "copy" in path) for path in lowered):
+        return "copy"
+    if any("llms.txt" in path or re.search(r"(?:^|[/._-])(meta|og|sitemap)(?:[/._-]|$)", path) for path in lowered):
+        return "seo"
+    if any("docs" in path and ("offer" in path or "pricing" in path) for path in lowered):
+        return "business"
+    return "dev"
+
+
+def category_from_labels(labels: object) -> str | None:
+    if not isinstance(labels, list):
+        return None
+    for label in labels:
+        if not isinstance(label, dict) or not isinstance(label.get("name"), str):
+            continue
+        name = label["name"]
+        normalized = name.casefold()
+        if normalized.startswith("cat:") and normalized[4:] in CATEGORIES:
+            return normalized[4:]
+    return None
+
+
+def labels_for_pr(pr: dict[str, Any]) -> object:
+    if "labels" in pr:
+        return pr["labels"]
+    try:
+        payload = json.loads(run_gh("pr", "view", str(pr["number"]), "--json", "labels"))
+    except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError):
+        return []
+    return payload.get("labels", []) if isinstance(payload, dict) else []
+
+
+def category_for_pr(pr: dict[str, Any]) -> str:
+    labeled = category_from_labels(labels_for_pr(pr))
+    if labeled:
+        return labeled
+    try:
+        paths = run_gh("pr", "diff", str(pr["number"]), "--name-only").splitlines()
+    except (KeyError, TypeError, OSError, subprocess.SubprocessError):
+        paths = []
+    return category_from_paths(paths)
+
+
 def author_name(pr: dict[str, Any]) -> str:
     author = pr.get("author") or {}
     return str(author.get("login") or "unknown contributor")
 
 
-def record_contribution(pr: dict[str, Any], mutation_id: int, approved_by: str = "Loic") -> dict[str, Any] | None:
+def record_contribution(pr: dict[str, Any], mutation_id: int, approved_by: str = "Loic", *, category: str | None = None) -> dict[str, Any] | None:
     """Record one accepted external PR; the source ref makes retries harmless."""
     handle = author_name(pr)
     if handle.casefold() in {"b-ai-bot", "night-mandate"} or handle.casefold().startswith("night-mandate"):
         return None
     try:
+        retained_category = category or category_for_pr(pr)
         return add_contribution(
             "pr",
             50,
@@ -144,6 +192,7 @@ def record_contribution(pr: dict[str, Any], mutation_id: int, approved_by: str =
             str(pr.get("title") or f"Community PR #{pr['number']}"),
             url=str(pr.get("url") or ""),
             source_ref=f"pr:{pr['number']}",
+            category=retained_category,
             db_path=Path(os.environ.get("BOARD_DB", BOARD_DB_PATH)),
         )
     except BoardError:
@@ -162,8 +211,10 @@ def approval_keyboard(pr_number: int) -> dict[str, Any]:
 
 def notify_new_pr(bot_token: str, pr: dict[str, Any], state: dict[str, Any]) -> None:
     number = str(pr["number"])
+    category = category_for_pr(pr)
     text = (
         f"Living Pitch PR #{number}\n"
+        f"[cat: {category}]\n"
         f"{pr['title']}\n"
         f"Proposed by: {author_name(pr)}\n"
         f"{pr['url']}\n\n"
@@ -175,7 +226,7 @@ def notify_new_pr(bot_token: str, pr: dict[str, Any], state: dict[str, Any]) -> 
         "reply_markup": approval_keyboard(int(number)),
         "disable_web_page_preview": True,
     })
-    state["notified"][number] = {"sent_at": time.time(), "title": pr["title"]}
+    state["notified"][number] = {"sent_at": time.time(), "title": pr["title"], "category": category}
     save_state(state)
     LOG.info("notified Telegram about PR #%s", number)
 
@@ -216,7 +267,7 @@ def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def append_mutation(pr: dict[str, Any], latency_s: int, approved_by: str = "Loic") -> int:
+def append_mutation(pr: dict[str, Any], latency_s: int, approved_by: str = "Loic", category: str = "dev") -> int:
     worktree = Path(tempfile.mkdtemp(prefix="living-pitch-ledger-"))
     try:
         run_gh("repo", "view", "--json", "nameWithOwner")
@@ -234,6 +285,7 @@ def append_mutation(pr: dict[str, Any], latency_s: int, approved_by: str = "Loic
             "approved_by": approved_by,
             "latency_s": latency_s,
             "verified": False,
+            "category": category,
         })
         mutation_file.write_text(json.dumps(mutations, indent=2) + "\n", encoding="utf-8")
         subprocess.run(["git", "add", "public/mutations.json"], cwd=worktree, check=True)
@@ -299,6 +351,11 @@ def deploy_and_verify() -> tuple[bool, str]:
 
 def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: str = "Loic") -> None:
     pr = json.loads(run_gh("pr", "view", str(number), "--json", "number,title,author,url,createdAt"))
+    live_category = category_for_pr(pr)
+    notified_category = state.get("notified", {}).get(str(number), {}).get("category")
+    category = notified_category if notified_category in CATEGORIES else live_category
+    if notified_category in CATEGORIES and notified_category != live_category:
+        LOG.warning("PR #%s category changed from Telegram card %s to live %s; keeping the card category", number, notified_category, live_category)
     leaks = diff_leaks(number)
     if leaks:
         names = ", ".join(sorted(leaks))
@@ -310,19 +367,19 @@ def approve_pr(bot_token: str, number: int, state: dict[str, Any], approved_by: 
     run_gh("pr", "merge", str(number), "--squash")
     sent_at = float(state["notified"].get(str(number), {}).get("sent_at", time.time()))
     latency = max(0, round(time.time() - sent_at))
-    mutation_id = append_mutation(pr, latency, approved_by)
+    mutation_id = append_mutation(pr, latency, approved_by, category)
     try:
-        record_contribution(pr, mutation_id, approved_by)
+        record_contribution(pr, mutation_id, approved_by, category=category)
     except Exception:
         LOG.exception("board write failed after PR #%s acceptance; the public ledger will reconcile it", number)
-        tell(bot_token, f"PR #{number} accepted. Board write deferred; its public ledger receipt will reconcile the contribution.")
+        tell(bot_token, f"PR #{number} [cat: {category}] accepted. Board write deferred; its public ledger receipt will reconcile the contribution.")
     verified, detail = deploy_and_verify()
     if verified:
         set_mutation_verified(mutation_id)
-        tell(bot_token, f"PR #{number} approved, merged, deployed + verified, and recorded in the public changelog. Approval latency: {latency}s.")
+        tell(bot_token, f"PR #{number} [cat: {category}] approved, merged, deployed + verified, and recorded in the public changelog. Approval latency: {latency}s.")
     else:
         LOG.error("post-merge deploy or smoke failed for PR #%s: %s", number, detail)
-        tell(bot_token, f"PR #{number} merged and recorded, but deploy + verification failed. The receipt remains unverified. Check the ledger logs. Approval latency: {latency}s.")
+        tell(bot_token, f"PR #{number} [cat: {category}] merged and recorded, but deploy + verification failed. The receipt remains unverified. Check the ledger logs. Approval latency: {latency}s.")
 
 
 def reject_pr(bot_token: str, number: int) -> None:
@@ -394,9 +451,10 @@ def cycle(bot_token: str, state: dict[str, Any]) -> None:
             # the ledger ships autonomously overnight, every mutation is publicly
             # labeled as such, and the human reviews and can revert in the morning.
             # Remove ~/.living-pitch-night-mandate to return to strict tap mode.
-            state["notified"][number] = {"sent_at": time.time(), "title": pr["title"]}
+            category = category_for_pr(pr)
+            state["notified"][number] = {"sent_at": time.time(), "title": pr["title"], "category": category}
             save_state(state)
-            tell(bot_token, f"Night mandate: PR #{number} ({pr['title']}) is being shipped autonomously. Review and revert in the morning if needed. {pr['url']}")
+            tell(bot_token, f"Night mandate: PR #{number} [cat: {category}] ({pr['title']}) is being shipped autonomously. Review and revert in the morning if needed. {pr['url']}")
             approve_pr(bot_token, int(number), state, approved_by="night-mandate (pre-launch)")
         else:
             notify_new_pr(bot_token, pr, state)

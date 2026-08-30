@@ -1,15 +1,17 @@
 import { capture } from './analytics.ts'
 
 export type MutationType = 'copy' | 'objection' | 'burn' | 'bug' | 'idea'
+export type MutationCategory = string
 
 export type MutationInput = {
   type: MutationType
   content: string
   rationale: string
   handle?: string
+  category?: MutationCategory
 }
 
-export type MutationResult = { issue_url: string }
+export type MutationResult = { issue_url: string; category: MutationCategory }
 
 const API_BASE = 'https://api.welcometotheaijungle.com'
 
@@ -25,6 +27,10 @@ function isMutationType(value: unknown): value is MutationType {
   return value === 'copy' || value === 'objection' || value === 'burn' || value === 'bug' || value === 'idea'
 }
 
+function isMutationCategory(value: unknown): value is MutationCategory {
+  return typeof value === 'string' && value.length > 0
+}
+
 export async function proposeMutation(input: MutationInput): Promise<MutationResult> {
   const response = await fetch(`${API_BASE}/mutations/propose`, {
     method: 'POST',
@@ -37,10 +43,10 @@ export async function proposeMutation(input: MutationInput): Promise<MutationRes
     const message = isRecord(payload) && typeof payload.error === 'string' ? payload.error : 'The colony channel is unavailable.'
     throw new Error(message)
   }
-  if (!isRecord(payload) || typeof payload.issue_url !== 'string' || !payload.issue_url.startsWith('https://github.com/B-AI-bot/living-pitch/issues/')) {
+  if (!isRecord(payload) || typeof payload.issue_url !== 'string' || !payload.issue_url.startsWith('https://github.com/B-AI-bot/living-pitch/issues/') || !isMutationCategory(payload.category)) {
     throw new Error('The colony channel returned an invalid issue URL.')
   }
-  return { issue_url: payload.issue_url }
+  return { issue_url: payload.issue_url, category: payload.category }
 }
 
 function composerMarkup(): string {
@@ -52,6 +58,7 @@ function composerMarkup(): string {
       <label>Type<select name="type"><option value="copy">Better copy</option><option value="objection">Missing objection</option><option value="burn">Burn</option><option value="bug">Bug</option><option value="idea">Idea</option></select></label>
       <label>Proposal<textarea name="content" maxlength="2000" required></textarea></label>
       <label>Why it helps<textarea name="rationale" maxlength="2000" required></textarea></label>
+      <label>Category<select name="category" data-category-options><option value="">Let the ledger classify it</option></select></label>
       <label>Handle (optional)<input name="handle" maxlength="160" autocomplete="nickname"></label>
       <p class="mutation-status" data-mutation-status></p>
       <div class="actions"><button class="button button-primary" type="submit">Send to the colony</button><button class="button button-quiet" type="button" data-action="close-mutation">Cancel</button></div>
@@ -59,11 +66,23 @@ function composerMarkup(): string {
   </section>`
 }
 
+async function populateCategoryOptions(select: HTMLSelectElement): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE}/board`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10000) })
+    const payload: unknown = await response.json()
+    if (!response.ok || !isRecord(payload) || !Array.isArray(payload.categories)) return
+    const categories = payload.categories.filter((category): category is string => typeof category === 'string' && category.length > 0)
+    select.insertAdjacentHTML('beforeend', categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join(''))
+  } catch {
+    return
+  }
+}
+
 export function stageAgentMutation(result: MutationResult): void {
   const root = document.querySelector<HTMLElement>('#app')
   if (!root) return
   root.querySelector('.agent-stage')?.remove()
-  root.insertAdjacentHTML('beforeend', `<section class="agent-stage"><p class="eyebrow">AGENT CHANNEL</p><h2>Your agent proposed an improvement.</h2><p>It is waiting in the human approval ledger.</p><a href="${escapeHtml(result.issue_url)}" target="_blank" rel="noreferrer">Open the community issue ↗</a></section>`)
+  root.insertAdjacentHTML('beforeend', `<section class="agent-stage"><p class="eyebrow">AGENT CHANNEL</p><h2>Your agent proposed an improvement.</h2><p>It is waiting in the human approval ledger. <span class="category-badge">${escapeHtml(result.category)}</span></p><a href="${escapeHtml(result.issue_url)}" target="_blank" rel="noreferrer">Open the community issue ↗</a></section>`)
 }
 
 export function wireMutationAffordance(root: HTMLElement): void {
@@ -73,6 +92,8 @@ export function wireMutationAffordance(root: HTMLElement): void {
     button.addEventListener('click', () => {
       if (!root.querySelector('.mutation-composer')) root.insertAdjacentHTML('beforeend', `<div class="modal-backdrop mutation-backdrop">${composerMarkup()}</div>`)
       const form = root.querySelector<HTMLFormElement>('[data-mutation-form]')
+      const categorySelect = root.querySelector<HTMLSelectElement>('[data-category-options]')
+      if (categorySelect) void populateCategoryOptions(categorySelect)
       const close = () => root.querySelector('.mutation-backdrop')?.remove()
       root.querySelectorAll<HTMLElement>('[data-action="close-mutation"]').forEach((item) => item.addEventListener('click', close, { once: true }))
       form?.addEventListener('submit', (event) => {
@@ -83,15 +104,16 @@ export function wireMutationAffordance(root: HTMLElement): void {
         const content = data.get('content')
         const rationale = data.get('rationale')
         const handle = data.get('handle')
+        const category = data.get('category')
         if (!isMutationType(type) || typeof content !== 'string' || typeof rationale !== 'string' || !content.trim() || !rationale.trim()) return
         form.dataset.busy = 'true'
         const status = form.querySelector<HTMLElement>('[data-mutation-status]')
         if (status) status.textContent = 'Sending the proposal to the ledger...'
         capture('mutation_propose_start', { type })
-        void proposeMutation({ type, content: content.trim(), rationale: rationale.trim(), handle: typeof handle === 'string' && handle.trim() ? handle.trim() : undefined })
+        void proposeMutation({ type, content: content.trim(), rationale: rationale.trim(), handle: typeof handle === 'string' && handle.trim() ? handle.trim() : undefined, category: isMutationCategory(category) ? category : undefined })
           .then((result) => {
             capture('mutation_propose_done', { type, ok: true })
-            if (status) status.innerHTML = `Logged. <a href="${escapeHtml(result.issue_url)}" target="_blank" rel="noreferrer">Review the issue ↗</a>`
+            if (status) status.innerHTML = `Logged as <span class="category-badge">${escapeHtml(result.category)}</span>. <a href="${escapeHtml(result.issue_url)}" target="_blank" rel="noreferrer">Review the issue ↗</a>`
             form.reset()
           })
           .catch((error: unknown) => {

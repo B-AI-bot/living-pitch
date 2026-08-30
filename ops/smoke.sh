@@ -48,6 +48,9 @@ grep -q 'board' dist/assets/*.js
 grep -q '"/board"' src/worker.js
 grep -q '"/rules"' src/worker.js
 grep -q 'escapeHtml(entry.contributions' src/board.ts
+grep -q 'category-filters' dist/assets/*.js
+grep -q 'category-badge' dist/assets/*.js
+grep -q '"category": "copy"' public/mutations.json
 API_PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
 API_CACHE="$(mktemp -d)"
 RESIDENT_ENABLED=0 ROAST_TEST_MODE=1 ROAST_CACHE_DB="$API_CACHE/roast-cache.db" BOARD_DB="$API_CACHE/board.db" RESIDENT_LOG_PATH="$API_CACHE/resident.jsonl" PORT="$API_PORT" python3 ops/api/server.py >/tmp/living-api-smoke.log 2>&1 &
@@ -63,10 +66,18 @@ done
 python3 -c 'import json; p=json.load(open("/tmp/living-api-roast.json")); assert p["burns"] and all(item["receipt"].strip() for item in p["burns"]); assert p["pivot"]["line"].startswith("Every joke above")'
 curl --silent --fail --dump-header /tmp/living-api-board-cors.txt -H 'Origin: https://www.welcometotheaijungle.com' "http://127.0.0.1:$API_PORT/board?cache-bust=1" >/tmp/living-api-board-empty.json
 grep -qi '^Access-Control-Allow-Origin: https://www.welcometotheaijungle.com' /tmp/living-api-board-cors.txt
-python3 -c 'import json; p=json.load(open("/tmp/living-api-board-empty.json")); assert p["today"] == [] and p["alltime"] == [] and p["ticker"] == []'
-BOARD_DB="$API_CACHE/board.db" BOARD_LEDGER="$ROOT/public/mutations.json" python3 ops/api/board_admin.py add --kind burn --handle '@smoke' --points 15 --title 'Smoke accepted burn' >/tmp/living-api-board-add.json
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-empty.json")); assert p["today"] == [] and p["alltime"] == [] and p["ticker"] == [] and p["categories"] == ["dev", "copy", "seo", "design", "business", "qa"] and p["crowns"]["today"]["copy"] is None'
+BOARD_DB="$API_CACHE/board.db" BOARD_LEDGER="$ROOT/public/mutations.json" python3 ops/api/board_admin.py add --kind burn --handle '@smoke' --points 15 --title 'Smoke accepted burn' --category copy >/tmp/living-api-board-add.json
+BOARD_ID="$(python3 -c 'import json; print(json.load(open("/tmp/living-api-board-add.json"))["id"])')"
 curl --silent --fail "http://127.0.0.1:$API_PORT/board" >/tmp/living-api-board-added.json
 python3 -c 'import json; p=json.load(open("/tmp/living-api-board-added.json")); assert p["alltime"][0]["handle"] == "@smoke" and p["alltime"][0]["points"] == 15'
+curl --silent --fail "http://127.0.0.1:$API_PORT/board?category=copy" >/tmp/living-api-board-copy.json
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-copy.json")); assert p["alltime"][0]["handle"] == "@smoke" and p["alltime"][0]["contributions"][0]["category"] == "copy" and p["crowns"]["alltime"]["copy"] == "@smoke"'
+BOARD_DB="$API_CACHE/board.db" python3 ops/api/board_admin.py recat "$BOARD_ID" qa >/tmp/living-api-board-recat.json
+curl --silent --fail "http://127.0.0.1:$API_PORT/board?category=qa" >/tmp/living-api-board-qa.json
+python3 -c 'import json; p=json.load(open("/tmp/living-api-board-qa.json")); assert p["alltime"][0]["handle"] == "@smoke" and p["alltime"][0]["contributions"][0]["category"] == "qa"'
+category_status="$(curl --silent --output /tmp/living-api-board-invalid.json --write-out '%{http_code}' "http://127.0.0.1:$API_PORT/board?category=unknown")"
+[[ "$category_status" == "400" ]]
 curl --silent --fail --dump-header /tmp/living-api-utm-cors.txt -X POST -H 'Origin: https://www.welcometotheaijungle.com' -H 'Content-Type: application/json' --data '{"ref":"@smoke","visitor_id":"visitor-1"}' "http://127.0.0.1:$API_PORT/visits/utm" >/tmp/living-api-visit-first.json
 grep -qi '^Access-Control-Allow-Origin: https://www.welcometotheaijungle.com' /tmp/living-api-utm-cors.txt
 for visitor in $(seq 2 22); do
