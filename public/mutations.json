@@ -173,5 +173,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 4,
     "verified": true
+  },
+  {
+    "id": 17,
+    "ts": "2026-08-30T12:42:46Z",
+    "title": "design: the Approval Ledger landing and the warm AIJ identity",
+    "detail": "PR #25 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 5,
+    "verified": false
   }
 ]
