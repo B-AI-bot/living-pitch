@@ -223,5 +223,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 5,
     "verified": true
+  },
+  {
+    "id": 22,
+    "ts": "2026-08-30T15:32:48Z",
+    "title": "fix(proof): every claim gets a working link",
+    "detail": "PR #31 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 4,
+    "verified": false
   }
 ]
