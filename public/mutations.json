@@ -138,5 +138,15 @@
     "approved_by": "night-mandate (pre-launch)",
     "latency_s": 6,
     "verified": false
+  },
+  {
+    "id": 15,
+    "ts": "2026-08-30T12:10:14Z",
+    "title": "feat: add contribution leaderboard and share loop",
+    "detail": "PR #23 shipped through the approval ledger.",
+    "proposed_by": "B-AI-bot",
+    "approved_by": "night-mandate (pre-launch)",
+    "latency_s": 5,
+    "verified": false
   }
 ]
