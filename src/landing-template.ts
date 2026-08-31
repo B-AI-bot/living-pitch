@@ -238,7 +238,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
         <div class="v2-steps" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
           <p data-reveal="1" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">01 · <a href="https://aiagentspitstop.com" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">AI Agents Pitstop</a>.</strong> Live, pay-per-use, self-serve agent work on its own site. Bring a task, pay for the run, keep the output.</p>
           <p data-reveal="1" data-delay="120" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">02 · <a href="/os" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">AI Jungle OS</a>.</strong> The private cockpit, if your team wants to drive it yourselves. Your workspace, your control, our rails.</p>
-          <p data-reveal="1" data-delay="240" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">03 · <a href="/learnaithing" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">LearnAIThing</a>.</strong> Operator training for teams that want the skill in-house before the system.</p>
+          <p data-reveal="1" data-delay="240" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">03 · <a href="https://www.learnaithing.com" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">LearnAIThing</a>.</strong> Operator training for teams that want the skill in-house before the system.</p>
         </div>
       </div>
     </section>
@@ -296,7 +296,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">VENTURES</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="https://aiagentspitstop.com" style="color:#C6B49C;text-decoration:none">AI Agents Pitstop</a><a href="/os" style="color:#C6B49C;text-decoration:none">AI Jungle OS</a><a href="/roots" style="color:#C6B49C;text-decoration:none">Jungle Roots</a><a href="/learnaithing" style="color:#C6B49C;text-decoration:none">LearnAIThing</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="https://aiagentspitstop.com" style="color:#C6B49C;text-decoration:none">AI Agents Pitstop</a><a href="/os" style="color:#C6B49C;text-decoration:none">AI Jungle OS</a><a href="https://ai-jungle-roots.com" style="color:#C6B49C;text-decoration:none">Jungle Roots</a><a href="https://www.learnaithing.com" style="color:#C6B49C;text-decoration:none">LearnAIThing</a></div>
         </div>
       </div>
       <div style="max-width:1180px;margin:56px auto 0 auto;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:26px 28px">
