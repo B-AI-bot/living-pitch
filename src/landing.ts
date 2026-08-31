@@ -14,12 +14,12 @@ const LINES: Array<[string, string, string]> = [
   ['006', 'every first client · still a client', 'act6'],
 ]
 const PAIRS = [
-  { pain: 'For an interim management and executive search advisory.', name: 'The visibility and network engine', tag: 'SOFI · BOB · MEMO · HUMAN APPROVED', initial: '01', grad: 'linear-gradient(135deg,#5C8460,#33522F)', desc: 'The network gets worked even when the partner cannot. Signals watched daily, briefs on the desk before every meeting, a CRM that maintains itself.' },
-  { pain: 'For a consulting practice.', name: 'The process mapper', tag: 'MEMO · EVA · PARTNERS VALIDATE', initial: '02', grad: 'linear-gradient(135deg,#C28A6A,#8a5536)', desc: 'An agent interviews the team, maps how work actually flows, and shows where expertise is trapped in repetitive steps. The map becomes the install plan.' },
+  { pain: 'For an interim management and executive search advisory.', name: 'The visibility and network engine', tag: 'SOFI · BOB · MEMO · HUMAN APPROVED', initial: '01', grad: 'linear-gradient(135deg,#5C8460,#33522F)', desc: "The network gets worked even when the partner can't. Signals watched daily, briefs on the desk before every meeting, a CRM that maintains itself. The partner walks in prepared and follows through without chasing." },
+  { pain: 'For a consulting practice.', name: 'The process mapper', tag: 'MEMO · EVA · PARTNERS VALIDATE', initial: '02', grad: 'linear-gradient(135deg,#C28A6A,#8a5536)', desc: 'An agent interviews the team, maps how work actually flows (not how the org chart says it flows), and shows where expertise is trapped in repetitive steps. The map becomes the install plan.' },
   { pain: 'For an M&A advisory and executive search boutique.', name: 'The VIP-circle radar', tag: 'SOFI · MEMO · ALERTS ONLY', initial: '03', grad: 'linear-gradient(135deg,#5C9A8A,#2F6F66)', desc: 'A quiet radar over the people who matter: role changes, deals closing, signals worth a call. The machine watches. The partner decides who to reach, and when.' },
-  { pain: 'For an HR and team-building boutique.', name: 'The website that adapts to how you read', tag: 'NESTOR · MEMO · EVERY VARIANT APPROVED', initial: '04', grad: 'linear-gradient(135deg,#7A9B6E,#456B49)', desc: 'The site reads how each visitor decides and reorders itself to match, with a visible toggle and a clean opt-out. The same discipline runs on the site you are reading right now.' },
-  { pain: 'For cross-border advisory work.', name: 'Consulting-grade desk research', tag: 'SOFI · MEMO · A SENIOR HUMAN SIGNS', initial: '05', grad: 'linear-gradient(135deg,#C98A3C,#9A5E1F)', desc: 'Research desks that produce partner-grade deliverables on real consulting frameworks, with every source labeled: fact, inference, or hypothesis.' },
-  { pain: 'For a principal with a public track record.', name: 'The voice-faithful drafting agent', tag: 'HIPO · MEMO · THEY APPROVE EVERY WORD', initial: '06', grad: 'linear-gradient(135deg,#9aa0a6,#5f6b72)', desc: 'Trained on their own appearances, it drafts in their voice and their positions. Not AI voice. Their voice.' },
+  { pain: 'For an HR and team-building boutique.', name: 'The website that adapts to how you read', tag: 'NESTOR · MEMO · EVERY VARIANT APPROVED', initial: '04', grad: 'linear-gradient(135deg,#7A9B6E,#456B49)', desc: "The site reads how each visitor decides and reorders itself to match, with a visible toggle and a clean opt-out. The same discipline runs on the site you're reading right now." },
+  { pain: 'For cross-border advisory work.', name: 'Consulting-grade desk research', tag: 'SOFI · MEMO · A SENIOR HUMAN SIGNS', initial: '05', grad: 'linear-gradient(135deg,#C98A3C,#9A5E1F)', desc: "Research desks that produce partner-grade deliverables on real consulting frameworks, with every source labeled: fact, inference, or hypothesis. Because a brief you can't defend is a brief you can't use." },
+  { pain: 'For a principal with a public track record.', name: 'The voice-faithful drafting agent', tag: 'HIPO · MEMO · THEY APPROVE EVERY WORD', initial: '06', grad: 'linear-gradient(135deg,#9aa0a6,#5f6b72)', desc: 'Trained on their own appearances, it drafts in their voice and their positions. Not AI voice. Their voice. They approve every word.' },
 ]
 const TYPED_FULL = 'your first three opportunities · pending your yes'
 const EASE = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -166,19 +166,12 @@ export function renderLanding(root: HTMLElement): void {
       ev.preventDefault()
       const email = (form.querySelector('input[type="email"]') as HTMLInputElement | null)?.value ?? ''
       const note = root.querySelector('[data-lp="subNote"]') as HTMLElement | null
-      fetch('/api/leads/capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'landing-newsletter', page: '/' }),
-      }).then((r) => {
-        if (note) {
-          note.hidden = false
-          if (!r.ok) note.textContent = 'That did not go through. Email hello@welcometotheaijungle.com and a human will add you.'
-        }
-        capture('landing_newsletter', { ok: r.ok })
-      }).catch(() => {
-        if (note) { note.hidden = false; note.textContent = 'That did not go through. Email hello@welcometotheaijungle.com and a human will add you.' }
-      })
+      if (!email.includes('@')) return
+      capture('landing_newsletter', { ok: true })
+      if (note) note.hidden = false
+      // The newsletter lives on Substack; its subscribe page confirms and
+      // double-opts-in, the same terminal step the legacy flow redirected to.
+      window.open(`https://welcometotheaijungle.substack.com/subscribe?email=${encodeURIComponent(email)}`, '_blank', 'noopener')
     })
 
     // scroll loop: reveals, act marks, proof approvals, counters, film scrub, ledger fade
@@ -283,6 +276,17 @@ function wireReadingMode(root: HTMLElement): void {
 
   const chip = document.createElement('div')
   chip.className = 'reading-chip'
+  // On small screens the chip starts as a pill so it never covers the hero
+  // card; the first tap expands it.
+  if (window.matchMedia('(max-width: 640px)').matches) {
+    chip.classList.add('is-mini')
+    chip.addEventListener('click', (event) => {
+      if (!chip.classList.contains('is-mini')) return
+      event.preventDefault()
+      event.stopPropagation()
+      chip.classList.remove('is-mini')
+    }, { capture: true })
+  }
   chip.innerHTML = '<span class="reading-chip-label"></span><button type="button" data-rm="switch"></button><button type="button" data-rm="why">why?</button><div class="reading-chip-note" hidden>This site reads how each visitor decides and reorders itself to match, with a visible toggle and a clean opt-out. The same discipline runs on the systems we install. Evidence-first leads with the verified numbers; story-first leads with your week.</div>'
   document.body.appendChild(chip)
 

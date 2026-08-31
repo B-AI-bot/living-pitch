@@ -26,9 +26,17 @@ export function bindNav(root: HTMLElement): void {
   const burger = root.querySelector<HTMLButtonElement>('.aij-burger')
   const drawer = root.querySelector<HTMLElement>('.aij-drawer')
   if (!burger || !drawer) return
-  burger.addEventListener('click', () => {
-    const open = drawer.hidden
+  const setOpen = (open: boolean): void => {
     drawer.hidden = !open
     burger.setAttribute('aria-expanded', String(open))
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu')
+    if (open) drawer.querySelector<HTMLAnchorElement>('a')?.focus()
+  }
+  burger.addEventListener('click', () => setOpen(drawer.hidden))
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !drawer.hidden) {
+      setOpen(false)
+      burger.focus()
+    }
   })
 }

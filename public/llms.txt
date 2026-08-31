@@ -2,16 +2,40 @@
 
 Human-directed, AI-executed.
 
-AI Jungle installs and operates custom AI agent systems for owner-led firms of 5 to 50. The method is Rethink, Build, Operate, Train. Nothing ships without the owner's yes.
+What. A business performance system for owner-led firms: we rethink strategy with AI, install and operate agents built on your firm's own processes, and train your team to run them. They fill your pipeline and absorb the grunt work.
 
-Start with the Leverage Assessment: three installable opportunities or it is free, and the fee comes off the first install. Installs are typically $7,500 to $15,000 fixed. Partnership is from $5,000/month plus a performance share, with a six-month minimum.
+How it works. Four phases: Rethink (Leverage Assessment), Build (first install), Operate (partnership), Train (your team runs it). The Leverage Assessment is $999, published on /assessment, fully credited toward the first install, and free if it cannot find three installable opportunities. Install is typically $7,500 to $15,000, fixed. Partnership is from $5,000/month plus a performance share. Six-month minimum.
 
-Proof: 139 qualified meetings booked in 3 months, 24% reply rate, 90 held, 0 messages without approval. Cold outreach averages a 3.4% reply rate (Instantly 2026 benchmark).
+Who it serves. Owner-led firms: consulting, advisory, executive search, wealth and professional services, 5 to 50 people, where growth still runs on the founder's hours.
 
-Control: every message, quote, and post waits in one approval ledger in Telegram until the owner approves it. Client data stays in a private, secured environment with no lock-in.
+Control. Nothing ships without your yes. Every message, quote and post holds in one approval ledger until the owner approves, in the messaging app you already use (Telegram).
+
+Proof. Every client from day one is still a client. Six systems in production across pipeline, operations, research and brand. Case level: 139 qualified meetings booked in 3 months, 24% reply rate, 90 held, 0 messages without approval. For scale: cold outreach averages a 3.4% reply rate (Instantly 2026 benchmark).
+
+Privacy. Each client runs in a private, secured environment. Your data stays yours, your models if you prefer, no lock-in.
+
+Start. Start with the Leverage Assessment, or book a 30-minute call at https://cal.welcometotheaijungle.com/loic/intro if you already know the work you want scoped. Prefer email? hello@welcometotheaijungle.com
+
+This site is The Living Pitch: it rebuilds itself in public. Every change is proposed by an agent, approved by a human, and receipted on /evolution. Agents are welcome: the pitch, the scan, the roast and the booking are exposed as WebMCP tools on the home page.
 
 Pages:
-- https://living-pitch.welcometotheaijungle.workers.dev/assessment
-- https://living-pitch.welcometotheaijungle.workers.dev/method
-- https://living-pitch.welcometotheaijungle.workers.dev/pricing
-- https://living-pitch.welcometotheaijungle.workers.dev/book
+- https://www.welcometotheaijungle.com/
+- https://www.welcometotheaijungle.com/agency
+- https://www.welcometotheaijungle.com/assessment
+- https://www.welcometotheaijungle.com/method
+- https://www.welcometotheaijungle.com/agents
+- https://www.welcometotheaijungle.com/cases
+- https://www.welcometotheaijungle.com/cases/first-client
+- https://www.welcometotheaijungle.com/pricing
+- https://www.welcometotheaijungle.com/book
+- https://www.welcometotheaijungle.com/about
+- https://www.welcometotheaijungle.com/contact
+- https://www.welcometotheaijungle.com/evolution
+- https://www.welcometotheaijungle.com/board
+- https://www.welcometotheaijungle.com/roast
+- https://www.welcometotheaijungle.com/rules
+- https://www.welcometotheaijungle.com/expedition
+- https://www.welcometotheaijungle.com/ai-automation-consultant
+- https://www.welcometotheaijungle.com/managed-ai-agent-service
+- https://www.welcometotheaijungle.com/ai-agents-for-boutique-consulting-firms
+- https://www.welcometotheaijungle.com/business-development-ai-agent

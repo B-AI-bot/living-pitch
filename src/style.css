@@ -600,3 +600,22 @@ legend { font: 600 13px/1.3 var(--body); color: var(--walnut); padding: 0 8px; }
 .reading-chip-note { flex-basis: 100%; font: 400 11px/1.55 var(--body); color: rgb(241 231 214 / 0.75); margin-top: 2px; }
 @media (max-width: 640px) { .reading-chip { right: 10px; bottom: 64px; max-width: 240px; } }
 .biz-body:empty { display: none; }
+.biz-band .button-quiet { color: var(--creme); border-color: rgb(241 231 214 / 0.35); }
+.biz-band .button-quiet:hover { color: var(--creme); border-color: var(--creme); }
+.biz-band .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+
+/* ---------- award-review fixes (2026-08-31 adversarial pass) ---------- */
+/* 26: footer text was #9a8773 on #f3eada (2.9:1); muted walnut passes AA */
+.pitch-footer, .site-footer { color: var(--muted); }
+.pitch-footer a, .site-footer a { color: var(--walnut); }
+/* 27: focus ring on dark bands needs a lighter ring to reach 3:1 */
+.biz-band :focus-visible, .final-call :focus-visible, .aij-header-dark :focus-visible { outline-color: #90C08A; }
+/* 25: the hidden radio inherited width:100% from the generic input rule and
+   overflowed the viewport at 390px */
+.roast-form .intensity-option input { width: 1px; height: 1px; left: 0; top: 0; }
+/* 24: on small screens the reading chip collapses to a pill until tapped */
+@media (max-width: 640px) {
+  .reading-chip { right: 10px; bottom: 64px; left: auto; max-width: 250px; }
+  .reading-chip.is-mini > .reading-chip-label, .reading-chip.is-mini > [data-rm="why"], .reading-chip.is-mini > .reading-chip-note { display: none; }
+  .reading-chip.is-mini { padding: 7px 10px; }
+}

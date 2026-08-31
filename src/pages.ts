@@ -1,5 +1,5 @@
 import { siteNav, bindNav } from './nav.ts'
-import { capture } from './analytics'
+import { capture } from './analytics.ts'
 
 // Every word of copy on these pages comes verbatim from the copy master
 // (05-aijungle-site-copy-v1.md). Do not paraphrase, trim, or "improve" it here:
@@ -16,7 +16,7 @@ type AgentCard = { name: string; animal: string; role: string; img: string; body
 
 type Block =
   | { kind: 'scene'; text: string }
-  | { kind: 'prose'; title?: string; paras: string[] }
+  | { kind: 'prose'; title?: string; paras: string[]; link?: { label: string; href: string } }
   | { kind: 'steps'; title?: string; items: Step[] }
   | { kind: 'qa'; title?: string; items: QA[] }
   | { kind: 'stats'; items: Stat[]; note?: string }
@@ -71,7 +71,7 @@ const pages: Record<string, Page> = {
       "In two to three weeks, we map where your firm actually leaks hours, put a dollar figure on each leak, and hand you the Leverage Map: your top three agent opportunities, ranked by impact, each with an install scope and a written success gate. Three, or it's free. And if we find them, the fee comes off your first install. Read that again: the only outcome where you lose money is the one where we've already proven we can make you more.",
     ],
     ctaLabel: CTA, ctaHref: '/book',
-    microcopy: 'The price is published, fixed, and fully credited toward your first install.',
+    microcopy: '$999, published right here, in plain sight. Fully credited toward your first install.',
     blocks: [
       { kind: 'scene', text: "The first call opens with your calendar, not our slides. Last week, hour by hour. Somewhere around Tuesday afternoon you'll go quiet, because you'll see it: the two hours rebuilding a brief that existed somewhere, the follow-up you drafted in your head and never sent, the CRM you update in the car. That silence is where we start." },
       { kind: 'prose', title: 'What you walk away with', paras: [
@@ -117,7 +117,7 @@ const pages: Record<string, Page> = {
         '"Nothing ships without your yes" is not a slogan. It\'s a queue.',
         'Every message, quote, and post the system drafts lands in one place: your approval ledger, inside the messaging app you already use (Telegram). You read, you tap yes, it ships. You tap no, it dies, and the system learns why. Ten minutes a day, usually over coffee. Every decision is logged, timestamped, and inspectable. When we say a number, you can audit the trail behind it.',
       ] },
-      { kind: 'quote', text: "It's the first employee who shows you everything before doing anything.", attribution: 'One client put it best.' },
+      { kind: 'quote', text: "It's the first employee who shows you everything before doing anything.", attribution: 'One client put it best' },
       { kind: 'callout', label: 'The success gate', paras: [
         'A number, not a vibe.',
         "Before we build anything, we write the gate together: the metric, the threshold, the date. Meetings booked. Hours recovered. Response time. Whatever your firm actually bleeds. It's signed before we start, reviewed monthly, and it decides whether we've earned the next phase. Most vendors call this terrifying. We call it Tuesday.",
@@ -133,6 +133,7 @@ const pages: Record<string, Page> = {
   '/agents': {
     kicker: '№ 03 The workforce',
     title: 'Twelve agents. One job each. Your processes.',
+    microcopy: "For owner-led firms of 5 to 50. Three installable opportunities or it's free.",
     lead: [
       "Monday, 7:58am. Before your coffee is drinkable, the briefing is on your phone: today's three priorities, the two risks worth your attention, the four drafts waiting for your yes. You didn't write it. You didn't chase anyone for it. Baibot did, because that's its one job, the way each of the twelve has exactly one job. Specialists, not a chatbot wearing twelve hats.",
       "Here's the team. Each one shaped to your firm's process during install, not shipped from a template. Each one reporting into one ledger. Each one blocked from sending anything without your yes.",
@@ -155,21 +156,15 @@ const pages: Record<string, Page> = {
       'What we can tell you at brand level: every client from day one is still a client. Six systems run in production, from pipeline to research to brand. And nothing, ever, has shipped without an owner\'s yes.',
     ],
     ctaLabel: "Read Franck's case →", ctaHref: '/cases/first-client',
-    blocks: [
-      { kind: 'stats', items: [
-        { value: '139', label: 'qualified meetings' },
-        { value: '24%', label: 'reply rate' },
-        { value: '90', label: 'meetings held' },
-        { value: '0', label: 'messages without approval' },
-      ], note: 'One system. One client. Three months. For scale: cold outreach averages a 3.4% reply rate on cold email (Instantly 2026 benchmark).' },
-      { kind: 'quote', text: 'In the last three months, the agent helped me book more than 90 qualified meetings with executives I would never have had time to reach, and I approved every single message before it went out. It works while I am in meetings.', attribution: 'Franck Euvrard, Partner, Asia-Connect Executive Partners' },
-    ],
-    final: { ...DEFAULT_FINAL, title: 'Read the full case, then decide.', paras: ['The full install, the numbers, and the covenant in practice.'], ctaLabel: "Read Franck's case →", ctaHref: '/cases/first-client', note: undefined },
+    microcopy: 'Case 01 · One system. One client. Three months. 139 qualified meetings.',
+    blocks: [],
+    final: { ...DEFAULT_FINAL, title: "Read Franck's case.", paras: ['One system. One client. Three months.'], ctaLabel: "Read Franck's case →", ctaHref: '/cases/first-client', note: undefined },
   },
 
   '/cases/first-client': {
     kicker: 'Case 01 · Interim management and executive search advisory',
     title: 'One system. One client. Three months. 139 qualified meetings.',
+    microcopy: "For owner-led firms of 5 to 50. Three installable opportunities or it's free.",
     lead: [
       "Franck's business is his network. Twenty years of executives who take his calls. The problem was never the asset, it was the hours: between mandates, delivery, and travel, the network sat unworked. The people who could sign his next three deals hadn't heard from him in a year. He knew it. Knowing it didn't create the hours.",
     ],
@@ -202,7 +197,7 @@ const pages: Record<string, Page> = {
     ctaLabel: CTA, ctaHref: '/assessment',
     blocks: [
       { kind: 'steps', items: [
-        { n: 'STEP 1', title: 'The Leverage Assessment · 2 to 3 weeks', body: 'Published, fixed. Your three installable opportunities, ranked by dollar impact, each with a scope and a draft success gate. Three or it\'s free, and the fee is fully credited toward your first install. The only scenario where you pay for the assessment and nothing else is the one where you take the map and walk. The door is open. Nobody has.' },
+        { n: 'STEP 1', title: 'The Leverage Assessment · 2 to 3 weeks', body: '$999, published, fixed. Your three installable opportunities, ranked by dollar impact, each with a scope and a draft success gate. Three or it\'s free, and the fee is fully credited toward your first install. The only scenario where you pay for the assessment and nothing else is the one where you take the map and walk. The door is open. Nobody has.' },
         { n: 'STEP 2', title: 'First agent install · 30 to 45 days', body: 'Typically $7,500 to $15,000. Fixed scope, fixed price, signed before we start. Your #1 leverage point goes live: one agent built on your processes, your team trained on it, the approval ledger running, and 30 days operated by us. Every install carries a written success gate agreed before we build. A number, not a vibe.' },
         { n: 'STEP 3', title: 'The partnership · 6-month minimum', body: 'From $5,000/month, plus a performance share on results we can prove. We operate the system: daily operation and human review, a monthly working session on the numbers, a new agent installed every quarter, and your team trained deeper each cycle. Your private, secured environment included: your data, your models if you prefer, no lock-in.' },
       ] },
@@ -224,6 +219,7 @@ const pages: Record<string, Page> = {
   '/about': {
     kicker: '№ 02 The operator',
     title: 'Operators first. Builders second.',
+    microcopy: "For owner-led firms of 5 to 50. Three installable opportunities or it's free.",
     lead: ["I didn't start AI Jungle because AI is exciting. I started it because I was drowning."],
     ctaLabel: CTA, ctaHref: '/assessment',
     blocks: [
@@ -262,13 +258,14 @@ const pages: Record<string, Page> = {
         no: { title: "Don't book if", body: "You want AI to replace your judgment, you want unsupervised volume with your name on it, or you're shopping for a demo to forward. We'd be wasting your slot, and slots are the one thing we genuinely don't have many of." } },
       { kind: 'prose', title: 'Under the calendar', paras: [
         'Prefer to start async? The Leverage Assessment page has the full scope and the price in plain sight.',
-      ] },
+      ], link: { label: 'Get my 3 installable opportunities →', href: '/assessment' } },
     ],
-    final: { title: 'Thirty minutes. No slides.', paras: ['Your real week on the table, and you leave with a map of it either way.'], ctaLabel: 'Book my 30-min call', ctaHref: CAL, note: 'Prefer email? hello@welcometotheaijungle.com' },
+    final: { title: 'Thirty minutes. Your real week on the table.', paras: ['No slides. No toy demo. Thirty minutes, your real week on the table, and we find the leak.'], ctaLabel: 'Book my 30-min call', ctaHref: CAL, note: 'Prefer email? hello@welcometotheaijungle.com' },
   },
 
   '/agency': {
     title: 'A business performance agency. Not an automation shop.',
+    microcopy: "For owner-led firms of 5 to 50. Three installable opportunities or it's free.",
     lead: [
       "The difference is the order of operations. Automation shops start with tools and go looking for problems. We start with your P&L and your calendar, find where the model leaks, and only then decide what to build. Rethink, Build, Operate, Train: the same arc as a consulting engagement, because that's what this is, with software that stays after the slides would have left.",
     ],
@@ -354,6 +351,52 @@ const pages: Record<string, Page> = {
 
 export const businessPagePaths: string[] = Object.keys(pages)
 
+// Semantic, DOM-free rendering of the same page data, used at build time to
+// give every route real content for agents and crawlers that never run JS.
+export function staticPageHtml(path: string): string | null {
+  const page = pages[path]
+  if (!page) return null
+  const parts: string[] = ['<main>']
+  if (page.kicker) parts.push(`<p>${escapeHtml(page.kicker)}</p>`)
+  parts.push(`<h1>${escapeHtml(page.title)}</h1>`)
+  for (const paragraph of page.lead) parts.push(`<p>${escapeHtml(paragraph)}</p>`)
+  if (page.microcopy) parts.push(`<p>${escapeHtml(page.microcopy)}</p>`)
+  if (page.ctaLabel) parts.push(`<p><a href="${escapeHtml(page.ctaHref ?? '/assessment')}">${escapeHtml(page.ctaLabel)}</a></p>`)
+  for (const block of page.blocks) {
+    if (block.kind === 'scene') parts.push(`<p>${escapeHtml(block.text)}</p>`)
+    else if (block.kind === 'prose') {
+      if (block.title) parts.push(`<h2>${escapeHtml(block.title)}</h2>`)
+      for (const paragraph of block.paras) parts.push(`<p>${escapeHtml(paragraph)}</p>`)
+      if (block.link) parts.push(`<p><a href="${escapeHtml(block.link.href)}">${escapeHtml(block.link.label)}</a></p>`)
+    } else if (block.kind === 'steps') {
+      if (block.title) parts.push(`<h2>${escapeHtml(block.title)}</h2>`)
+      for (const step of block.items) parts.push(`<h3>${escapeHtml(step.n)} · ${escapeHtml(step.title)}</h3><p>${escapeHtml(step.body)}</p>`)
+    } else if (block.kind === 'qa') {
+      if (block.title) parts.push(`<h2>${escapeHtml(block.title)}</h2>`)
+      for (const item of block.items) parts.push(`<h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p>`)
+    } else if (block.kind === 'stats') {
+      parts.push(`<p>${block.items.map((stat) => `${escapeHtml(stat.value)} ${escapeHtml(stat.label)}`).join(' · ')}</p>`)
+      if (block.note) parts.push(`<p>${escapeHtml(block.note)}</p>`)
+    } else if (block.kind === 'quote') {
+      parts.push(`<blockquote><p>${escapeHtml(block.text)}</p><footer>${escapeHtml(block.attribution)}</footer></blockquote>`)
+    } else if (block.kind === 'split') {
+      parts.push(`<h3>${escapeHtml(block.yes.title)}</h3><p>${escapeHtml(block.yes.body)}</p><h3>${escapeHtml(block.no.title)}</h3><p>${escapeHtml(block.no.body)}</p>`)
+    } else if (block.kind === 'agents') {
+      for (const agent of block.items) parts.push(`<h3>${escapeHtml(agent.name)} · ${escapeHtml(agent.animal)} · ${escapeHtml(agent.role)}</h3><p>${escapeHtml(agent.body)}</p><p>Starts with: ${escapeHtml(agent.starts)}</p>`)
+    } else {
+      parts.push(`<h2>${escapeHtml(block.label)}</h2>`)
+      for (const paragraph of block.paras) parts.push(`<p>${escapeHtml(paragraph)}</p>`)
+    }
+  }
+  const final = page.final ?? DEFAULT_FINAL
+  parts.push(`<h2>${escapeHtml(final.title)}</h2>`)
+  for (const paragraph of final.paras) parts.push(`<p>${escapeHtml(paragraph)}</p>`)
+  if (final.ctaLabel) parts.push(`<p><a href="${escapeHtml(final.ctaHref ?? '/assessment')}">${escapeHtml(final.ctaLabel)}</a></p>`)
+  if (final.note) parts.push(`<p>${escapeHtml(final.note)}</p>`)
+  parts.push('</main>')
+  return parts.join('')
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] ?? character)
 }
@@ -367,7 +410,9 @@ function renderBlock(block: Block): string {
     return `<section class="biz-block biz-scene rv"><p>${escapeHtml(block.text)}</p></section>`
   }
   if (block.kind === 'prose') {
-    return `<section class="biz-block biz-prose rv">${block.title ? `<h2>${escapeHtml(block.title)}</h2>` : ''}${paragraphs(block.paras)}</section>`
+    return `<section class="biz-block biz-prose rv">${block.title ? `<h2>${escapeHtml(block.title)}</h2>` : ''}${paragraphs(block.paras)}${
+      block.link ? `<p><a class="prose-link" href="${escapeHtml(block.link.href)}">${escapeHtml(block.link.label)}</a></p>` : ''
+    }</section>`
   }
   if (block.kind === 'steps') {
     return `<section class="biz-block biz-steps rv">${block.title ? `<h2>${escapeHtml(block.title)}</h2>` : ''}<ol class="steps-rail">${block.items
@@ -429,16 +474,12 @@ function wireNewsletter(root: HTMLElement, page: string): void {
     event.preventDefault()
     const email = new FormData(form).get('email')
     if (typeof email !== 'string' || !email.includes('@')) return
-    void fetch('/api/leads/capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source: 'newsletter', page }),
-    }).then(() => {
-      const note = form.querySelector<HTMLElement>('.nl-note')
-      if (note) note.hidden = false
-      form.querySelector<HTMLInputElement>('input')?.setAttribute('disabled', 'true')
-      capture('newsletter_signup', { page })
-    })
+    capture('newsletter_signup', { page })
+    const note = form.querySelector<HTMLElement>('.nl-note')
+    if (note) note.hidden = false
+    // The newsletter lives on Substack; its subscribe page confirms and
+    // double-opts-in, which is the same terminal step the legacy flow used.
+    window.open(`https://welcometotheaijungle.substack.com/subscribe?email=${encodeURIComponent(email)}`, '_blank', 'noopener')
   })
 }
 

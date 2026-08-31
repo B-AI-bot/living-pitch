@@ -1,3 +1,5 @@
+import STATIC_ROUTES from "./static-routes.json" with { type: "json" };
+
 const CAL_ORIGIN = "https://cal.welcometotheaijungle.com";
 const PRIMARY_SLOTS_PATH = "/api/trpc/public/slots.getSchedule";
 // Cal.com's current booking frontend routes this public query through the
@@ -33,14 +35,23 @@ const PAGE_METADATA = {
 
 function withRouteMetadata(response, path) {
   const page = PAGE_METADATA[path];
-  if (!page) return response;
-  return new HTMLRewriter()
-    .on("title", { element(element) { element.setInnerContent(page.title); } })
-    .on('meta[name="description"]', { element(element) { element.setAttribute("content", page.description); } })
-    .on('meta[property="og:title"]', { element(element) { element.setAttribute("content", page.title); } })
-    .on('meta[property="og:description"]', { element(element) { element.setAttribute("content", page.description); } })
-    .on('meta[property="og:url"]', { element(element) { element.setAttribute("content", `https://www.welcometotheaijungle.com${path}`); } })
-    .transform(response);
+  const staticBody = path === "/" ? null : STATIC_ROUTES[path];
+  if (!page && !staticBody) return response;
+  let rewriter = new HTMLRewriter();
+  if (page) {
+    rewriter = rewriter
+      .on("title", { element(element) { element.setInnerContent(page.title); } })
+      .on('meta[name="description"]', { element(element) { element.setAttribute("content", page.description); } })
+      .on('meta[property="og:title"]', { element(element) { element.setAttribute("content", page.title); } })
+      .on('meta[property="og:description"]', { element(element) { element.setAttribute("content", page.description); } })
+      .on('meta[property="og:url"]', { element(element) { element.setAttribute("content", `https://www.welcometotheaijungle.com${path}`); } });
+  }
+  if (staticBody) {
+    // Agents and crawlers that never run JS get this route's real copy instead
+    // of the home body. The app replaces the node on render either way.
+    rewriter = rewriter.on("#app", { element(element) { element.setInnerContent(staticBody, { html: true }); } });
+  }
+  return rewriter.transform(response);
 }
 
 class BoundaryError extends Error {}
@@ -355,7 +366,17 @@ export default {
     const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/contact", "/ai-automation-consultant", "/managed-ai-agent-service", "/ai-agents-for-boutique-consulting-firms", "/business-development-ai-agent", "/board", "/rules", "/expedition", "/scrollcraft.js", "/scrollcraft.css", "/mutations.json", "/llms.txt", "/favicon.ico", "/icon.png", "/apple-icon.png", "/robots.txt"]);
     const path = url.pathname.replace(/\/$/, "") || "/";
     if (path === "/ai") return Response.redirect(`${url.origin}/ai-automation-consultant`, 301);
-    if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/brand/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/api/")) {
+    if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/brand/") || url.pathname.startsWith("/og/")) {
+      // Real files only: the SPA fallback must never answer for a missing asset
+      // with 200 text/html, or crawlers and clients cannot tell absence from success.
+      const asset = await env.ASSETS.fetch(request);
+      if (asset.headers.get("content-type")?.startsWith("text/html")) return new Response("Not found", { status: 404 });
+      return asset;
+    }
+    if (url.pathname.startsWith("/api/")) {
+      return Response.json({ error: "unknown api path" }, { status: 404 });
+    }
+    if (APP_PATHS.has(path)) {
       const asset = await env.ASSETS.fetch(request);
       return withRouteMetadata(asset, path);
     }
@@ -365,6 +386,13 @@ export default {
     const legacy = new URL(url.pathname + url.search, "https://front-staging.welcometotheaijungle.com");
     try {
       const upstream = await fetch(new Request(legacy, { method: request.method, headers: request.headers, body: request.body }), { redirect: "manual" });
+      if (upstream.status === 404) {
+        // Neither site knows this path: serve the app shell so the visitor gets
+        // the Living Pitch 404 page, in the current design, with a real 404 code.
+        const shell = await env.ASSETS.fetch(new Request(new URL("/", url.origin)));
+        const rewritten = withRouteMetadata(shell, path);
+        return new Response(rewritten.body, { status: 404, headers: rewritten.headers });
+      }
       const headers = new Headers(upstream.headers);
       headers.set("X-Living-Pitch-Passthrough", "legacy");
       return new Response(upstream.body, { status: upstream.status, headers });

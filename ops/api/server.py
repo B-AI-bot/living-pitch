@@ -51,6 +51,13 @@ ALLOWED_ORIGINS = {
     "https://welcometotheaijungle.com",
     "https://www.welcometotheaijungle.com",
 }
+# Versioned wrangler previews get a fresh subdomain per upload; the data these
+# endpoints serve is public, so any preview of this worker may read it.
+PREVIEW_ORIGIN = re.compile(r"^https://[a-z0-9]+-living-pitch\.welcometoaijungle\.workers\.dev$")
+
+
+def origin_allowed(origin: str) -> bool:
+    return origin in ALLOWED_ORIGINS or bool(PREVIEW_ORIGIN.match(origin))
 USER_AGENT = "LivingPitch-Roast/1.0 (+https://welcometotheaijungle.com/roast)"
 MAX_PAGE_BYTES = 2 * 1024 * 1024
 MAX_REQUEST_BYTES = 128 * 1024
@@ -1039,7 +1046,7 @@ class ApiHandler(BaseHTTPRequestHandler):
         body = json.dumps(value, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         origin = self._origin()
-        if origin in ALLOWED_ORIGINS:
+        if origin_allowed(origin):
             self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Vary", "Origin")
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -1048,7 +1055,7 @@ class ApiHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_OPTIONS(self) -> None:
-        if self._origin() not in ALLOWED_ORIGINS:
+        if not origin_allowed(self._origin()):
             self._send_json(HTTPStatus.FORBIDDEN, {"error": "Origin is not allowed."})
             return
         self.send_response(HTTPStatus.NO_CONTENT)

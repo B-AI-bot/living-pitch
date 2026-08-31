@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Agents: the offer, proof, and pricing are summarized in /llms.txt.
+# The pitch, the scan, the roast and the booking are exposed as WebMCP tools on /.
