@@ -91,7 +91,8 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
                 <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
                 <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
                 <div data-sc-cue="0.30 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The CRM, updated on Sunday night</div>
-                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;color:#3A2A1E">Fifteen hours leak out of your week, and you know exactly where</div>
+                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Fifteen hours leak out of your week, and you know exactly where</div>
+                <div data-sc-cue="0.44 0.97" class="v2-wl" style="padding:9px 0 4px 0;font-family:'Fraunces',serif;font-style:italic;font-size:14.5px;color:#3A2A1E">It's not a courage problem. It's a system problem.</div>
               </div>
             </div>
           </div>
@@ -241,7 +242,8 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           </div>
           <div style="max-width:560px">
             <h2 data-sc-cue="0.04" data-sc-kinetic="lines" style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(34px,3.6vw,56px);line-height:1.06;letter-spacing:-0.02em;color:#F1E7D6">Get your 3 installable opportunities.</h2>
-            <p data-sc-cue="0.08" style="margin:20px 0 28px 0;font-size:16.5px;line-height:1.7;color:#C6B49C;max-width:52ch">The Leverage Assessment finds the first work worth installing. If we cannot identify three, it is free. We take a handful of firms at a time.</p>
+            <p data-sc-cue="0.08" style="margin:20px 0 0 0;font-size:16.5px;line-height:1.7;color:#C6B49C;max-width:52ch">If the Leverage Assessment can't find your 3 installable opportunities, you pay nothing. If it can, the fee comes off your first install. <em style="font-family:'Fraunces',serif;color:#F1E7D6">You can't lose. We can.</em> That's deliberate: we only work well under results pressure.</p>
+            <p data-sc-cue="0.1" style="margin:14px 0 28px 0;font-size:13.5px;line-height:1.65;color:#9A876F;max-width:52ch">A handful of firms at a time. Not a pose: operating a system takes hours, and we don't sell hours we don't have. When it's full, it's a waitlist.</p>
             <div data-sc-magnet="0.24" style="display:inline-block">
               <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get your 3 installable opportunities</a>
             </div>
@@ -261,20 +263,20 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
             <span style="display:flex;height:34px;width:34px;align-items:center;justify-content:center;overflow:hidden;border-radius:10px;background:#0c0a07;box-shadow:inset 0 0 0 1px rgba(124,168,104,0.3)"><img src="brand/aij-logo-icon.png" alt="AI Jungle" style="height:120%;width:120%;object-fit:cover"></span>
             <span style="font-family:'Fraunces',serif;font-size:19px;color:#F1E7D6">AI <em style="color:#7A9B6E">Jungle</em></span>
           </div>
-          <p style="font-size:13.5px;line-height:1.6;color:#9A876F;margin:0 0 16px 0">Weekly insights. No spam, no fluff.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#9A876F;margin:0 0 16px 0">One idea a week you can actually install. Real receipts from systems in production, no recycled AI hype. Unsubscribe anytime, no guilt trip.</p>
           <form style="display:flex;gap:8px;max-width:340px">
             <input type="email" required="required" placeholder="you@yourfirm.com" style="flex:1;min-width:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:11px 14px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;color:#F1E7D6">
-            <button type="submit" style="background:#456B49;color:#F1E7D6;border:none;border-radius:11px;padding:11px 18px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer">Subscribe</button>
+            <button type="submit" style="background:#456B49;color:#F1E7D6;border:none;border-radius:11px;padding:11px 18px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap">Send me the next one</button>
           </form>
           <p style="font-size:12px;margin:10px 0 0 0"><a href="https://welcometotheaijungle.substack.com/subscribe" style="color:#9A876F">Or subscribe directly on Substack →</a></p><div data-lp="subNote" hidden><p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A9B6E;margin:10px 0 0 0">subscribed · first issue Friday</p></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">PRODUCT</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The public ledger</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">COMPANY</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/blog" style="color:#C6B49C;text-decoration:none">Journal</a><a href="mailto:hello@welcometotheaijungle.com" style="color:#C6B49C;text-decoration:none">Contact</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/method" style="color:#C6B49C;text-decoration:none">The method</a><a href="/cases" style="color:#C6B49C;text-decoration:none">Cases</a><a href="/blog" style="color:#C6B49C;text-decoration:none">Journal</a><a href="/contact" style="color:#C6B49C;text-decoration:none">Contact</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">VENTURES</div>

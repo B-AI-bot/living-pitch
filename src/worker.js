@@ -24,7 +24,11 @@ const PAGE_METADATA = {
   "/book": { title: "Book a call | AI Jungle", description: "Thirty minutes with your real week on the table." },
   "/about": { title: "The operator | AI Jungle", description: "Why The Living Pitch exists and why every output stays human-directed." },
   "/agency": { title: "The agency | AI Jungle", description: "A business performance agency for owner-led firms of 5 to 50." },
-  "/ai": { title: "AI automation consultant | AI Jungle", description: "AI automation built around your firm, operated daily, and measured against a gate." },
+  "/contact": { title: "Contact | AI Jungle", description: "Talk to a human. We keep several." },
+  "/ai-automation-consultant": { title: "AI automation consultant | AI Jungle", description: "AI automation built around your firm, operated daily, and measured against a gate." },
+  "/managed-ai-agent-service": { title: "Managed AI agent service | AI Jungle", description: "Agents installed on your processes, operated daily, and approved by you." },
+  "/ai-agents-for-boutique-consulting-firms": { title: "AI agents for boutique consulting firms | AI Jungle", description: "Agents built on your methodology, with verified numbers and a written success gate." },
+  "/business-development-ai-agent": { title: "Business development AI agent | AI Jungle", description: "A BD agent that never sends a message without your yes." },
 };
 
 function withRouteMetadata(response, path) {
@@ -348,8 +352,9 @@ export default {
       headers.delete("ETag");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/ai", "/board", "/rules", "/expedition", "/scrollcraft.js", "/scrollcraft.css", "/mutations.json", "/llms.txt", "/favicon.ico", "/icon.png", "/apple-icon.png", "/robots.txt"]);
+    const APP_PATHS = new Set(["/", "/roast", "/evolution", "/pricing", "/assessment", "/method", "/agents", "/cases", "/cases/first-client", "/book", "/about", "/agency", "/contact", "/ai-automation-consultant", "/managed-ai-agent-service", "/ai-agents-for-boutique-consulting-firms", "/business-development-ai-agent", "/board", "/rules", "/expedition", "/scrollcraft.js", "/scrollcraft.css", "/mutations.json", "/llms.txt", "/favicon.ico", "/icon.png", "/apple-icon.png", "/robots.txt"]);
     const path = url.pathname.replace(/\/$/, "") || "/";
+    if (path === "/ai") return Response.redirect(`${url.origin}/ai-automation-consultant`, 301);
     if (APP_PATHS.has(path) || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/brand/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/og/") || url.pathname.startsWith("/api/")) {
       const asset = await env.ASSETS.fetch(request);
       return withRouteMetadata(asset, path);

@@ -40,6 +40,7 @@ export function renderLanding(root: HTMLElement): void {
   root.innerHTML = `<div id="page" style="position:relative"><span data-sc-progress></span><div class="sc-grain" aria-hidden="true"></div><div style="position:absolute;top:0;left:0;right:0;z-index:15">${siteNav('dark')}</div>${LANDING_HTML}</div>`
   bindNav(root)
   capture('landing_view', {})
+  wireReadingMode(root)
 
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const lines: Record<string, LineState> = Object.fromEntries(LINES.map(([id]) => [id, 'idle']))
@@ -265,4 +266,43 @@ export function renderLanding(root: HTMLElement): void {
     if (rm) startTyping()
     renderLedger()
   }
+}
+
+// The adaptive-reading promise from the copy master, kept honestly: a visible
+// toggle, a clean opt-out, and copy assembled only from master sentences.
+const READING_KEY = 'aij-reading-mode'
+const EVIDENCE_SUB = 'One system booked 139 qualified meetings in three months at a 24% reply rate, where cold outreach averages 3.4% (Instantly 2026 benchmark). We build the system on your processes. We operate it every day. And nothing ships without your yes: not a message, not a quote, not a line.'
+
+function wireReadingMode(root: HTMLElement): void {
+  const subElement = root.querySelector<HTMLElement>('.v2-sub')
+  if (!subElement) return
+  const sub: HTMLElement = subElement
+  const storySub = sub.textContent ?? ''
+  let mode: 'story' | 'evidence' = 'story'
+  try { if (localStorage.getItem(READING_KEY) === 'evidence') mode = 'evidence' } catch { /* private mode */ }
+
+  const chip = document.createElement('div')
+  chip.className = 'reading-chip'
+  chip.innerHTML = '<span class="reading-chip-label"></span><button type="button" data-rm="switch"></button><button type="button" data-rm="why">why?</button><div class="reading-chip-note" hidden>This site reads how each visitor decides and reorders itself to match, with a visible toggle and a clean opt-out. The same discipline runs on the systems we install. Evidence-first leads with the verified numbers; story-first leads with your week.</div>'
+  document.body.appendChild(chip)
+
+  const label = chip.querySelector<HTMLElement>('.reading-chip-label')
+  const switchButton = chip.querySelector<HTMLButtonElement>('[data-rm="switch"]')
+  const whyButton = chip.querySelector<HTMLButtonElement>('[data-rm="why"]')
+  const note = chip.querySelector<HTMLElement>('.reading-chip-note')
+
+  function apply(next: 'story' | 'evidence', persist: boolean): void {
+    mode = next
+    sub.textContent = next === 'evidence' ? EVIDENCE_SUB : storySub
+    if (label) label.textContent = `TUNED FOR: ${next === 'evidence' ? 'EVIDENCE-FIRST' : 'STORY-FIRST'}`
+    if (switchButton) switchButton.textContent = next === 'evidence' ? 'switch to story' : 'switch to evidence'
+    if (persist) {
+      try { localStorage.setItem(READING_KEY, next) } catch { /* private mode */ }
+      capture('reading_mode', { mode: next })
+    }
+  }
+
+  apply(mode, false)
+  switchButton?.addEventListener('click', () => apply(mode === 'story' ? 'evidence' : 'story', true))
+  whyButton?.addEventListener('click', () => { if (note) note.hidden = !note.hidden })
 }
