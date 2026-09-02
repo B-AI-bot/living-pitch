@@ -246,6 +246,7 @@ const pages: Record<string, Page> = {
       'No slides, no pitch deck, no "let me tell you about our journey". You bring last week\'s calendar. We find the fifteen-hour leak together. If there\'s a fit, we\'ll tell you exactly what the next step costs. If there isn\'t, we\'ll tell you that too, and you\'ll have lost half an hour and gained a map of your own week. People have paid consultants for worse.',
     ],
     ctaLabel: 'Book my 30-min call', ctaHref: CAL,
+    microcopy: 'For owner-led firms of 5 to 50: consulting, advisory, executive search, wealth management.',
     blocks: [
       { kind: 'steps', title: 'How the 30 minutes go', items: [
         { n: '0-3', title: 'The frame.', body: 'Diagnostic, not demo. You can hold us to it.' },

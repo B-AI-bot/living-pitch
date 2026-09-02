@@ -10,5 +10,8 @@ BOOKING_NONCE_SECRET = "living-pitch-dev-booking-nonce-secret"
 [assets]
 directory = "./dist"
 binding = "ASSETS"
-run_worker_first = ["/*", "!/assets/*"]
+# The worker runs on every path so missing assets return a real 404 instead of
+# the SPA fallback (adversarial finding #7). Real assets still stream from the
+# binding; the worker only adds the content-type guard.
+run_worker_first = ["/*"]
 not_found_handling = "single-page-application"
