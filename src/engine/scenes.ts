@@ -66,13 +66,13 @@ export function getSceneCopy(scene: SceneId, skin: Skin): SceneCopy {
   if (scene === 'basecamp') {
     return skin.tone === 'evidence-first'
       ? {
-          eyebrow: 'TERRITORY 00 · BASECAMP',
+          eyebrow: 'THE EXPEDITION · PLAY THE AI JUNGLE PITCH · TUNED TO YOUR FIRM',
           title: 'Grow without hiring.',
           narration: 'Fifteen hours leak out of a week before the work that matters gets a turn. We will find the system problem underneath it, then show you what is worth installing.',
           proof: 'The Leverage Assessment finds three installable opportunities or it is free.',
         }
       : {
-          eyebrow: 'TERRITORY 00 · BASECAMP',
+          eyebrow: 'THE EXPEDITION · PLAY THE AI JUNGLE PITCH · TUNED TO YOUR FIRM',
           title: 'Sunday, 9:40pm.',
           narration: 'The proposal is still open. Three follow-ups never went out. The perfect candidate never got called back. Fifteen hours leak out of your week, and you know exactly where.',
           proof: 'It is not a courage problem. It is a system problem.',

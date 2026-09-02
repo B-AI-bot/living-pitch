@@ -1,3 +1,4 @@
+import { siteNav } from './nav.ts'
 import { capture } from './analytics'
 
 type Mutation = {
@@ -56,7 +57,7 @@ function mutationCard(mutation: Mutation): string {
 export async function renderEvolution(root: HTMLElement): Promise<void> {
   root.innerHTML = `
     <main class="shell evolution-page">
-      <nav class="top-nav"><a href="/">The Living Pitch</a><span>Public changelog</span><a href="/board">The Board</a><a href="/rules">Rules</a></nav>
+      ${siteNav('light')}
       <header class="evolution-header">
         <p class="eyebrow">The approval ledger</p>
         <h1>Watch it change.</h1>

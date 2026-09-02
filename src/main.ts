@@ -2,7 +2,7 @@ import './style.css'
 import { startAnalytics } from './analytics'
 import { renderEvolution } from './evolution'
 import { installWebMcpTools } from './webmcp'
-import { renderBusinessPage, renderNotFound } from './pages'
+import { renderBusinessPage, renderNotFound, businessPagePaths } from './pages'
 import { renderPitch } from './pitch'
 import { renderLanding } from './landing'
 import { renderRoast } from './roast'
@@ -19,7 +19,7 @@ startAnalytics()
 const path = window.location.pathname.replace(/\/$/, '') || '/'
 setRouteMetadata(path)
 void recordShareVisit()
-const businessPaths = new Set(['/pricing', '/assessment', '/method', '/agents', '/cases', '/cases/first-client', '/book', '/about', '/agency', '/ai'])
+const businessPaths = new Set(businessPagePaths)
 if (path === '/roast') {
   renderRoast(root)
 } else if (path === '/evolution') {

@@ -13,6 +13,10 @@ a{color:#456B49}a:hover{color:#5C8460}
 ::selection{background:rgba(69,107,73,.28)}
 :focus-visible{outline:2px solid #5C8460;outline-offset:2px}
 @keyframes aijStamp{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+.lp-enter{opacity:0;animation:lpEnter .6s cubic-bezier(0.22,1,0.36,1) forwards}
+.lp-enter:nth-of-type(2){animation-delay:.12s}.lp-enter:nth-of-type(3){animation-delay:.24s}
+@keyframes lpEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.lp-enter{animation:none;opacity:1}}
 @keyframes aijCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
 @media (prefers-reduced-motion: reduce){.aij-anim *{animation:none !important;transition:none !important}}
 @media (max-width:820px){
@@ -71,26 +75,26 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
         <div class="v2-hero" style="display:grid;grid-template-columns:1.12fr 0.88fr;gap:52px;align-items:center;max-width:1180px;margin:0 auto;padding:0 32px;height:100%">
           <div>
             <div data-sc-cue="0 0.94 0">
-              <div style="display:flex;align-items:center;gap:11px;margin-bottom:22px">
-                <span style="display:flex;height:38px;width:38px;align-items:center;justify-content:center;overflow:hidden;border-radius:11px;background:#0c0a07;box-shadow:inset 0 0 0 1px rgba(124,168,104,0.3)"><img src="brand/aij-logo-icon.png" alt="" style="height:120%;width:120%;object-fit:cover"></span>
-                <span style="font-family:'Fraunces',serif;font-size:20px;color:#F1E7D6">AI <em style="color:#7A9B6E">Jungle</em></span>
-              </div>
+              
               <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.24em;color:#9A876F;margin-bottom:14px">FOR FIRMS OF 5 TO 50 WHERE EVERYTHING STILL RUNS THROUGH YOU</div>
               <h1 class="v2-h1" style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(38px,4.6vw,64px);line-height:1.04;letter-spacing:-0.02em;color:#F1E7D6">Grow <em style="color:#7A9B6E">without hiring.</em></h1>
-              <p class="v2-sub" style="margin:18px 0 0 0;max-width:46ch;font-size:16.5px;line-height:1.6;color:#C6B49C">We rethink your strategy with AI. We build the system on your processes. We operate it every day. We train your team to run it. You keep your voice, your methods, and the final word: nothing ships without your yes.</p>
+              <p class="v2-sub" style="margin:18px 0 0 0;max-width:46ch;font-size:16.5px;line-height:1.6;color:#C6B49C">We rethink your strategy with AI. We build the system on your processes. We operate it every day. We train your team to run it. You keep your voice, your methods, and the final word: nothing ships without your yes. Not a message. Not a quote. Not a line. And part of our pay rides on results we can prove. Not on our slides.</p>
               <div class="v2-ctas" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:26px">
-                <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get your 3 installable opportunities</a>
+                <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get my 3 installable opportunities →</a>
+                <a href="https://cal.welcometotheaijungle.com/loic/intro" style="display:inline-flex;align-items:center;height:50px;padding:0 22px;border-radius:999px;border:1px solid rgba(241,231,214,0.35);color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:14.5px;font-weight:600;text-decoration:none">Book my 30-min call</a>
               </div>
-              <p data-proof="001" class="v2-proof" style="margin:16px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">Every client from day one is still a client. Six systems running in production, from pipeline to research to brand. And nothing, ever, ships without your yes.</p>
+              <p style="margin:12px 0 0 0;font-size:12.5px;line-height:1.6;color:#9A876F;max-width:52ch">No slides. No toy demo. Thirty minutes, your real week on the table, and we find the leak.</p>
+              <p data-proof="001" class="v2-proof" style="margin:14px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:#9A876F;max-width:46ch">Every client from day one is still a client. And nothing, ever, ships without your yes.</p>
             </div>
             <div class="v2-week" style="margin-top:28px;background:#FCF8F0;border:1px solid rgba(74,53,38,0.14);border-radius:14px;padding:16px 20px;max-width:460px;box-shadow:0 18px 40px -24px rgba(0,0,0,0.6)">
-              <div data-sc-cue="0 0.94 0" style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.24em;color:#9A8773;margin-bottom:6px">YOUR WEEK, AS IT RUNS</div>
+              <div data-sc-cue="0 0.94 0" style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.24em;color:#9A8773;margin-bottom:6px"><span>YOUR WEEK, AS IT RUNS</span><span style="letter-spacing:0.1em;color:#C46A2C">SUNDAY, 9:40PM</span></div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;color:#4E3E2E">
-                <div data-sc-cue="0.06 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The proposal, still open</div>
-                <div data-sc-cue="0.14 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
-                <div data-sc-cue="0.22 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The proposal, still open</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Three follow-ups that never went out</div>
+                <div class="v2-wl lp-enter" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The perfect candidate, never called back</div>
                 <div data-sc-cue="0.30 0.94" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">The CRM, updated on Sunday night</div>
-                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;color:#3A2A1E">Fifteen hours leak out of your week, and you know exactly where</div>
+                <div data-sc-cue="0.38 0.97" class="v2-wl" style="padding:7px 0;border-bottom:1px dashed rgba(58,42,30,0.18)">Fifteen hours leak out of your week, and you know exactly where</div>
+                <div data-sc-cue="0.44 0.97" class="v2-wl" style="padding:9px 0 4px 0;font-family:'Fraunces',serif;font-style:italic;font-size:14.5px;color:#3A2A1E">It's not a courage problem. It's a system problem.</div>
               </div>
             </div>
           </div>
@@ -105,8 +109,8 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
                 </span>
               </div>
               <div style="display:flex;flex-direction:column;gap:9px;border-radius:18px;background:#161109;padding:14px">
-                <div data-sc-cue="0.05 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">06:40</small>A proposal draft, holding for your yes</div>
-                <div data-sc-cue="0.14 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:15</small>Today's meeting briefs, ready. The CRM maintained itself overnight.</div>
+                <div class="lp-enter" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">06:40</small>A proposal draft, holding for your yes</div>
+                <div class="lp-enter" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:15</small>Today's meeting briefs, ready. The CRM maintained itself overnight.</div>
                 <div data-sc-cue="0.23 0.96" style="align-self:flex-start;max-width:88%;border-radius:13px;border-bottom-left-radius:4px;background:#221a10;color:#F1E7D6;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">07:58</small>A polite reminder for the overdue invoice, holding for your yes</div>
                 <div data-sc-cue="0.34 0.97" style="align-self:flex-end;max-width:88%;border-radius:13px;border-bottom-right-radius:4px;background:#456B49;color:#fff;padding:8px 12px;font-size:12.5px;line-height:1.45"><small style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.6;margin-bottom:3px">YOU · 08:04</small>You approved 14 items over coffee. Nothing shipped without your yes.</div>
                 <span data-sc-cue="0.45 0.97" style="margin-top:2px;align-self:flex-start;border-radius:20px;border:1px solid rgba(124,168,104,0.4);padding:4px 10px;font-size:11px;color:#7A9B6E">Review · Approve · Done</span>
@@ -119,23 +123,23 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
 
     <section id="act2" data-screen-label="Act 2 · The two failures" class="v2-pad" style="background:#F3EADA;padding:110px 32px 90px 32px">
       <div style="max-width:1180px;margin:0 auto">
-        <h2 data-reveal="1" style="margin:0 0 44px 0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(30px,3.6vw,46px);line-height:1.08;letter-spacing:-0.02em;color:#3A2A1E;max-width:18ch">Both default answers fail owner-led firms.</h2>
+        <h2 data-reveal="1" style="margin:0 0 24px 0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(30px,3.6vw,46px);line-height:1.08;letter-spacing:-0.02em;color:#3A2A1E;max-width:18ch">Both default answers fail owner-led firms.</h2>
+        <p data-reveal="1" data-delay="60" style="margin:0 0 44px 0;font-size:16px;line-height:1.7;color:#6A5443;max-width:66ch">Let's say it plainly. Your firm is you. Your network, your name, your judgment. The weeks you push, it moves. The weeks you're on a mission, everything waits. And the only advice anyone has given you for ten years is: hire. Another salary. Another risk. Six months training someone who might walk out with your method under their arm.</p>
         <div class="v2-cols2" style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
           <div data-reveal="1" data-delay="100" style="border-radius:18px;border:1px solid rgba(74,53,38,0.12);background:#FFFDF8;padding:34px;box-shadow:0 14px 30px -18px rgba(60,42,28,0.25)">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#9A8773;margin-bottom:12px">DEFAULT 1 · STAND STILL</div>
             <h3 style="margin:0 0 12px 0;font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:#3A2A1E">Do nothing, and the leak compounds.</h3>
-            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#6A5443">Independent studies put "work about work" at 60 percent of the knowledge week. We only need to find your fifteen hours. Multiply them by your day rate: that is a salary you never hired, paid anyway.</p>
-            <p style="margin:0;font-size:15.5px;line-height:1.65;color:#6A5443">And while the admin gets done, the network cools. Roughly a quarter of your contacts change roles every year. Each move is a mandate won, or a mandate you read about.</p>
+            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#6A5443">Fifteen hours leak out of your week, and you know exactly where. Multiply them by your day rate: that's a salary you never hired, paid anyway.</p>
+            <p style="margin:0;font-size:15.5px;line-height:1.65;color:#6A5443">And while the admin gets done, the network cools. The people who could sign your next three deals haven't heard from you in a year. You know it. Knowing it doesn't create the hours.</p>
           </div>
           <div data-reveal="1" data-delay="220" style="border-radius:18px;border:1px solid rgba(124,168,104,0.16);background:radial-gradient(130% 130% at 70% 20%, #15100a 0%, #0b0806 100%);padding:34px;box-shadow:0 20px 44px -20px rgba(20,14,8,0.7)">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#9A876F;margin-bottom:12px">DEFAULT 2 · AUTOPILOT</div>
             <h3 style="margin:0 0 12px 0;font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:#F1E7D6">Automate blindly, and your name pays for it.</h3>
-            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#C6B49C">The market's fix is autopilot. The AI circus sells you off-the-shelf AI employees: generic personas that write like no one and sign in your name. You're right not to trust them. The results are in: generic AI outreach now replies at under 1 percent, and half of buyers say they prefer brands that keep generative AI out of the conversation.</p>
+            <p style="margin:0 0 14px 0;font-size:15.5px;line-height:1.65;color:#C6B49C">The market's fix is autopilot. The AI circus sells you off-the-shelf AI employees: generic personas that write like no one and sign in your name. You're right not to trust them.</p>
             <p style="margin:0;font-size:15.5px;line-height:1.65;color:#C6B49C">In a firm where the product is your judgment, one robotic email costs more than it saves.</p>
           </div>
         </div>
         <p data-reveal="1" data-delay="320" style="margin:56px auto 0 auto;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(23px,2.4vw,34px);line-height:1.3;color:#3A2A1E;text-align:center;max-width:30ch">Standing still costs the hours. Autopilot costs the name. You need a <em style="color:#456B49">third way.</em></p>
-        <p data-reveal="1" data-delay="380" style="margin:52px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9A8773">Sources: Asana Anatomy of Work Index; UserGems and Champify job-change data; 2026 cold outreach benchmarks; Gartner 2026 consumer survey.</p>
       </div>
     </section>
 
@@ -169,13 +173,15 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
             <p data-reveal="1" data-delay="400" style="margin:0;padding:0 0 18px 0;font-size:13.5px;color:#9A8773">First client, first three months. In production, not in a deck. For scale: cold outreach averages a 3.4 percent reply rate across billions of sends (Instantly 2026 benchmark).</p>
           </div>
           <div>
+            <p data-reveal="1" data-delay="100" style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#6A5443;max-width:58ch">Franck sold his network but no longer had time to work it. We installed a prospecting system. The market averages a 3.4% reply rate on cold email (Instantly 2026 benchmark, billions of sends). His replies at 24%. And every message waited for his yes, on Telegram, before it left.</p>
             <figure data-reveal="1" data-delay="150" style="margin:0;padding:28px;background:#FFFDF8;border:1px solid rgba(74,53,38,0.12);border-radius:18px;box-shadow:0 14px 30px -18px rgba(60,42,28,0.25)">
-              <blockquote style="margin:0;font-family:'Fraunces',serif;font-size:19px;line-height:1.5;color:#3A2A1E">"In the last three months, the agent helped me to book more than 90 qualified meetings with executives I would never have had time to reach, and I approved every single message before it went out. It works while I am in meetings."</blockquote>
+              <blockquote style="margin:0;font-family:'Fraunces',serif;font-size:19px;line-height:1.5;color:#3A2A1E">"In the last three months, the agent helped me book more than 90 qualified meetings with executives I would never have had time to reach, and I approved every single message before it went out. It works while I am in meetings."</blockquote>
               <figcaption style="display:flex;align-items:center;gap:14px;margin-top:20px">
                 <span style="display:flex;width:52px;height:52px;flex:none;align-items:center;justify-content:center;border-radius:999px;background:linear-gradient(135deg,#5C8460,#33522F);font-family:'Fraunces',serif;font-size:18px;color:#fff">FE</span>
                 <span style="font-size:13.5px;line-height:1.5;color:#6A5443">Franck Euvrard, Partner, Asia-Connect Executive Partners<br><a href="https://www.trustpilot.com/review/welcometotheaijungle.com" style="font-size:12.5px">Verified review on Trustpilot →</a></span>
               </figcaption>
             </figure>
+            <p data-reveal="1" data-delay="200" style="margin:14px 0 0 4px"><a href="/cases/first-client" style="font-size:14.5px;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">Read the full case →</a></p>
             <div data-reveal="1" data-delay="250" style="margin-top:20px;padding:22px 26px;border:1px solid rgba(74,53,38,0.14);border-radius:14px">
               <p style="margin:0;font-size:14.5px;line-height:1.7;color:#6A5443">We run on the workforce we sell. This site and the businesses around it are built, checked and operated by the same agents we install. When you buy from us, you are buying the system we trust our own revenue to.</p>
             </div>
@@ -194,7 +200,7 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           </div>
           <span data-lp="pairs"></span>
           <div class="v2-cell" style="width:420px;min-width:420px;flex:none">
-            <p style="margin:0;font-family:'Fraunces',serif;font-size:clamp(20px,2vw,27px);line-height:1.45;color:#3A2A1E">Not another team of generic personas. Off-the-shelf AI employees ship someone else's process with your logo on it. We map yours first. That is why the results compound instead of plateauing.</p>
+            <p style="margin:0;font-family:'Fraunces',serif;font-size:clamp(20px,2vw,27px);line-height:1.45;color:#3A2A1E">Not another team of generic personas. Off-the-shelf AI employees ship someone else's process with your logo on it. We map yours first. That's why the results compound instead of plateauing.</p>
             <p style="margin:22px 0 0 0"><a href="/agents" style="font-size:15px;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">Find your first install →</a></p>
           </div>
         </div>
@@ -222,6 +228,18 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           </div>
         </div>
         <p data-proof="006" data-reveal="1" data-delay="320" style="margin:26px 0 0 4px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#9A8773">Every client we have started with is still with us.</p>
+        <p data-reveal="1" data-delay="380" style="margin:34px 0 0 4px;font-size:15px;line-height:1.7;color:#6A5443;max-width:62ch">We don't sell automation. We rethink the firm first, then we build, operate, and train your team to need us less. Yes, that last part is bad for our invoicing. It's also why every client has stayed. <a href="/method" style="text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">See the full method →</a></p>
+      </div>
+    </section>
+
+    <section data-screen-label="Other ways in" class="v2-pad" style="background:#F7F0E2;border-top:1px solid rgba(74,53,38,0.1);padding:70px 32px">
+      <div style="max-width:1180px;margin:0 auto">
+        <h2 data-reveal="1" style="margin:0 0 30px 0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(24px,2.6vw,34px);line-height:1.15;letter-spacing:-0.02em;color:#3A2A1E;max-width:24ch">Not ready for a managed system? Fine. <em style="color:#456B49">Start smaller.</em></h2>
+        <div class="v2-steps" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
+          <p data-reveal="1" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">01 · <a href="https://aiagentspitstop.com" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">AI Agents Pitstop</a>.</strong> Live, pay-per-use, self-serve agent work on its own site. Bring a task, pay for the run, keep the output.</p>
+          <p data-reveal="1" data-delay="120" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">02 · <a href="/os" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">AI Jungle OS</a>.</strong> The private cockpit, if your team wants to drive it yourselves. Your workspace, your control, our rails.</p>
+          <p data-reveal="1" data-delay="240" style="margin:0;font-size:14.5px;line-height:1.65;color:#6A5443"><strong style="color:#3A2A1E">03 · <a href="https://www.learnaithing.com" style="color:#3A2A1E;text-decoration:none;border-bottom:1px solid rgba(69,107,73,0.4)">LearnAIThing</a>.</strong> Operator training for teams that want the skill in-house before the system.</p>
+        </div>
       </div>
     </section>
 
@@ -240,14 +258,15 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
           </div>
           <div style="max-width:560px">
             <h2 data-sc-cue="0.04" data-sc-kinetic="lines" style="margin:0;font-family:'Fraunces',serif;font-weight:400;font-size:clamp(34px,3.6vw,56px);line-height:1.06;letter-spacing:-0.02em;color:#F1E7D6">Get your 3 installable opportunities.</h2>
-            <p data-sc-cue="0.08" style="margin:20px 0 28px 0;font-size:16.5px;line-height:1.7;color:#C6B49C;max-width:52ch">The Leverage Assessment finds the first work worth installing. If we cannot identify three, it is free. We take a handful of firms at a time.</p>
+            <p data-sc-cue="0.08" style="margin:20px 0 0 0;font-size:16.5px;line-height:1.7;color:#C6B49C;max-width:52ch">If the Leverage Assessment can't find your 3 installable opportunities, you pay nothing. If it can, the fee comes off your first install. <em style="font-family:'Fraunces',serif;color:#F1E7D6">You can't lose. We can.</em> That's deliberate: we only work well under results pressure.</p>
+            <p data-sc-cue="0.1" style="margin:14px 0 28px 0;font-size:13.5px;line-height:1.65;color:#9A876F;max-width:52ch">A handful of firms at a time. Not a pose: operating a system takes hours, and we don't sell hours we don't have. When it's full, it's a waitlist.</p>
             <div data-sc-magnet="0.24" style="display:inline-block">
-              <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get your 3 installable opportunities</a>
+              <a href="/assessment" data-lp="cta" style="display:inline-flex;align-items:center;height:50px;padding:0 28px;border-radius:999px;background:#456B49;color:#F1E7D6;font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 14px 30px -14px rgba(69,107,73,0.55)">Get my 3 installable opportunities →</a>
             </div>
             <div data-lp="stampedNote" hidden>
               <p style="margin:14px 0 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A9B6E">stamped · continues to /assessment</p>
             </div>
-            <p data-sc-cue="0.08" style="margin:44px 0 0 0;font-size:14px;line-height:1.7;color:#9A876F">Prefer to talk first? <a href="https://cal.welcometotheaijungle.com/loic/intro" style="color:#C6B49C">Book a 30-minute call.</a> No slides, no pitch deck. Come with your 15-hour problem. hello@welcometotheaijungle.com</p>
+            <p data-sc-cue="0.08" style="margin:44px 0 0 0;font-size:14px;line-height:1.7;color:#9A876F">Prefer to talk first? <a href="https://cal.welcometotheaijungle.com/loic/intro" style="color:#C6B49C">Book my 30-min call.</a> No slides. No toy demo. Thirty minutes, your real week on the table, and we find the leak. hello@welcometotheaijungle.com</p>
           </div>
         </div>
       </div>
@@ -260,24 +279,24 @@ export const LANDING_HTML = `<nav id="ledgerD" class="aij-ledger-d" aria-label="
             <span style="display:flex;height:34px;width:34px;align-items:center;justify-content:center;overflow:hidden;border-radius:10px;background:#0c0a07;box-shadow:inset 0 0 0 1px rgba(124,168,104,0.3)"><img src="brand/aij-logo-icon.png" alt="AI Jungle" style="height:120%;width:120%;object-fit:cover"></span>
             <span style="font-family:'Fraunces',serif;font-size:19px;color:#F1E7D6">AI <em style="color:#7A9B6E">Jungle</em></span>
           </div>
-          <p style="font-size:13.5px;line-height:1.6;color:#9A876F;margin:0 0 16px 0">Weekly insights. No spam, no fluff.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#9A876F;margin:0 0 16px 0">One idea a week you can actually install. Real receipts from systems in production, no recycled AI hype. Unsubscribe anytime, no guilt trip.</p>
           <form style="display:flex;gap:8px;max-width:340px">
             <input type="email" required="required" placeholder="you@yourfirm.com" style="flex:1;min-width:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:11px 14px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;color:#F1E7D6">
-            <button type="submit" style="background:#456B49;color:#F1E7D6;border:none;border-radius:11px;padding:11px 18px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer">Subscribe</button>
+            <button type="submit" style="background:#456B49;color:#F1E7D6;border:none;border-radius:11px;padding:11px 18px;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap">Send me the next one</button>
           </form>
           <p style="font-size:12px;margin:10px 0 0 0"><a href="https://welcometotheaijungle.substack.com/subscribe" style="color:#9A876F">Or subscribe directly on Substack →</a></p><div data-lp="subNote" hidden><p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A9B6E;margin:10px 0 0 0">subscribed · first issue Friday</p></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">PRODUCT</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The public ledger</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/assessment" style="color:#C6B49C;text-decoration:none">The Leverage Assessment</a><a href="/agents" style="color:#C6B49C;text-decoration:none">The agents</a><a href="/evolution" style="color:#C6B49C;text-decoration:none">The approval ledger</a><a href="/pricing" style="color:#C6B49C;text-decoration:none">Pricing</a><a href="/expedition" style="color:#C6B49C;text-decoration:none">Play the expedition</a><a href="/roast" style="color:#C6B49C;text-decoration:none">Roast my site</a><a href="/board" style="color:#C6B49C;text-decoration:none">The board</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">COMPANY</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/blog" style="color:#C6B49C;text-decoration:none">Journal</a><a href="mailto:hello@welcometotheaijungle.com" style="color:#C6B49C;text-decoration:none">Contact</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="/about" style="color:#C6B49C;text-decoration:none">About</a><a href="/method" style="color:#C6B49C;text-decoration:none">The method</a><a href="/cases" style="color:#C6B49C;text-decoration:none">Cases</a><a href="/blog" style="color:#C6B49C;text-decoration:none">Journal</a><a href="/contact" style="color:#C6B49C;text-decoration:none">Contact</a></div>
         </div>
         <div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#9A876F;margin-bottom:13px">VENTURES</div>
-          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="https://aiagentspitstop.com" style="color:#C6B49C;text-decoration:none">AI Agents Pitstop</a><a href="/os" style="color:#C6B49C;text-decoration:none">AI Jungle OS</a><a href="/roots" style="color:#C6B49C;text-decoration:none">Jungle Roots</a><a href="/learnaithing" style="color:#C6B49C;text-decoration:none">LearnAIThing</a></div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:14px"><a href="https://aiagentspitstop.com" style="color:#C6B49C;text-decoration:none">AI Agents Pitstop</a><a href="/os" style="color:#C6B49C;text-decoration:none">AI Jungle OS</a><a href="https://ai-jungle-roots.com" style="color:#C6B49C;text-decoration:none">Jungle Roots</a><a href="https://www.learnaithing.com" style="color:#C6B49C;text-decoration:none">LearnAIThing</a></div>
         </div>
       </div>
       <div style="max-width:1180px;margin:56px auto 0 auto;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:26px 28px">

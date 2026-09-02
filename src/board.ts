@@ -1,3 +1,4 @@
+import { siteNav } from './nav.ts'
 import { capture } from './analytics'
 
 type ContributionKind = 'pr' | 'burn' | 'mutation' | 'share'
@@ -102,7 +103,7 @@ function crowns(board: BoardPayload): string {
 }
 
 function shell(content: string): string {
-  return `<main class="board-page"><div class="site-shell"><nav class="site-nav"><a class="site-mark" href="/">AI JUNGLE</a><div class="site-links"><a href="/evolution">Evolution</a><a href="/rules">Rules</a><a href="/roast">Roast my site</a></div></nav>${content}<footer class="site-footer"><strong>Human-directed, AI-executed.</strong><a href="/">Play the Living Pitch →</a><a href="/evolution">Evolution</a><a href="/rules">Board rules</a><a href="/roast">Roast my site</a></footer></div></main>`
+  return `<main class="board-page"><div class="site-shell">${siteNav('light')}${content}<footer class="site-footer"><strong>Human-directed, AI-executed.</strong><a href="/">Play the Living Pitch →</a><a href="/evolution">Evolution</a><a href="/rules">Board rules</a><a href="/roast">Roast my site</a></footer></div></main>`
 }
 
 export async function renderBoard(root: HTMLElement): Promise<void> {

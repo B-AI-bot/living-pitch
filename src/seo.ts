@@ -1,21 +1,28 @@
 type RouteMetadata = { title: string; description: string }
 
+// One truth: these entries mirror PAGE_METADATA in src/worker.js. If you change
+// a title there, change it here in the same commit.
 const metadata: Record<string, RouteMetadata> = {
-  '/': { title: 'The Living Pitch', description: 'A B2B site that evolves in public. See what your agent sees.' },
+  '/': { title: 'AI Jungle · Grow without hiring', description: "We install and operate AI agent systems built on your firm's own processes. Nothing ships without your yes." },
+  '/expedition': { title: 'The Expedition | The Living Pitch', description: 'Play the pitch. Your agent can play it with you.' },
   '/board': { title: 'The Board | The Living Pitch', description: 'The public leaderboard for useful contributions to The Living Pitch.' },
   '/rules': { title: 'Board rules | The Living Pitch', description: 'How usefulness earns rank on The Living Pitch.' },
   '/evolution': { title: 'The approval ledger | The Living Pitch', description: 'Watch The Living Pitch change through approved public mutations.' },
   '/roast': { title: 'Roast my site | The Living Pitch', description: 'Get a receipt-first roast of what your website actually says, shows, and loads.' },
-  '/pricing': { title: 'Pricing | The Living Pitch', description: 'Fixed prices, written success gates, and a performance partnership for owner-led firms.' },
-  '/assessment': { title: 'Leverage Assessment | The Living Pitch', description: 'Find three installable opportunities in your firm, or pay nothing.' },
-  '/method': { title: 'The method | The Living Pitch', description: 'Rethink the firm, build the right system, operate it daily, and train your team.' },
-  '/agents': { title: 'The workforce | The Living Pitch', description: 'Twelve specialist agents, one approval ledger, and your processes.' },
-  '/cases': { title: 'Proof | The Living Pitch', description: 'Verified numbers from AI agent systems built and operated in real firms.' },
-  '/cases/first-client': { title: 'Case 01 | The Living Pitch', description: 'One system, one client, three months, and 139 qualified meetings.' },
-  '/book': { title: 'Book a call | The Living Pitch', description: 'Thirty minutes with your real week on the table.' },
-  '/about': { title: 'The operator | The Living Pitch', description: 'Why The Living Pitch exists and why every output stays human-directed.' },
-  '/agency': { title: 'The agency | The Living Pitch', description: 'A business performance agency for owner-led firms of 5 to 50.' },
-  '/ai': { title: 'AI automation consultant | The Living Pitch', description: 'AI automation built around your firm, operated daily, and measured against a gate.' },
+  '/pricing': { title: 'Pricing | AI Jungle', description: 'Fixed prices, written success gates, and a performance partnership for owner-led firms.' },
+  '/assessment': { title: 'Leverage Assessment | AI Jungle', description: 'Find three installable opportunities in your firm, or pay nothing.' },
+  '/method': { title: 'The method | AI Jungle', description: 'Rethink the firm, build the right system, operate it daily, and train your team.' },
+  '/agents': { title: 'The workforce | AI Jungle', description: 'Twelve specialist agents, one approval ledger, and your processes.' },
+  '/cases': { title: 'Proof | AI Jungle', description: 'Verified numbers from AI agent systems built and operated in real firms.' },
+  '/cases/first-client': { title: 'Case 01 | AI Jungle', description: 'One system, one client, three months, and 139 qualified meetings.' },
+  '/book': { title: 'Book a call | AI Jungle', description: 'Thirty minutes with your real week on the table.' },
+  '/about': { title: 'The operator | AI Jungle', description: 'Why The Living Pitch exists and why every output stays human-directed.' },
+  '/agency': { title: 'The agency | AI Jungle', description: 'A business performance agency for owner-led firms of 5 to 50.' },
+  '/contact': { title: 'Contact | AI Jungle', description: 'Talk to a human. We keep several.' },
+  '/ai-automation-consultant': { title: 'AI automation consultant | AI Jungle', description: 'AI automation built around your firm, operated daily, and measured against a gate.' },
+  '/managed-ai-agent-service': { title: 'Managed AI agent service | AI Jungle', description: 'Agents installed on your processes, operated daily, and approved by you.' },
+  '/ai-agents-for-boutique-consulting-firms': { title: 'AI agents for boutique consulting firms | AI Jungle', description: 'Agents built on your methodology, with verified numbers and a written success gate.' },
+  '/business-development-ai-agent': { title: 'Business development AI agent | AI Jungle', description: 'A BD agent that never sends a message without your yes.' },
 }
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string): void {
@@ -35,7 +42,9 @@ export function setRouteMetadata(route: string): void {
   setMeta('property', 'og:title', page.title)
   setMeta('property', 'og:description', page.description)
   setMeta('property', 'og:type', 'website')
-  setMeta('property', 'og:url', `${window.location.origin}${route}`)
+  // The canonical origin, not the serving origin: previews and workers.dev
+  // must not leak into share cards.
+  setMeta('property', 'og:url', `https://www.welcometotheaijungle.com${route}`)
   void fetch('/og/default.png', { method: 'HEAD' }).then((response) => {
     if (response.ok && response.headers.get('content-type')?.startsWith('image/')) setMeta('property', 'og:image', `${window.location.origin}/og/default.png`)
   }).catch(() => undefined)
